@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Days 11–12 — DBMS &amp; SQL | Matrix Theme</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0a0a0a;
+            font-family: 'Inter', sans-serif;
+            color: #e0e0e0;
+        }
+
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.35;
+        }
+
+        .presentation-container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .slide-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            max-height: 90vh;
+            aspect-ratio: 16 / 9;
+            background: rgba(10, 10, 10, 0.82);
+            border: 1px solid rgba(0, 255, 65, 0.25);
+            border-radius: 20px;
+            box-shadow: 0 0 60px rgba(0, 255, 65, 0.06), inset 0 0 80px rgba(0, 255, 65, 0.02);
+            backdrop-filter: blur(4px);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 50px;
+            transition: border-color 0.4s ease;
+        }
+
+        .slide-wrapper:hover {
+            border-color: rgba(0, 255, 65, 0.45);
+        }
+
+        .slides-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.6s cubic-bezier(0.23, 1, 0.32, 1), transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            transform: scale(0.97);
+            padding: 10px 5px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 255, 65, 0.3) transparent;
+        }
+
+        .slide::-webkit-scrollbar {
+            width: 4px;
+        }
+        .slide::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .slide::-webkit-scrollbar-thumb {
+            background: rgba(0, 255, 65, 0.3);
+            border-radius: 10px;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1);
+        }
+
+        .slide-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 2.6rem;
+            font-weight: 700;
+            color: #00ff41;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.3em;
+            text-shadow: 0 0 30px rgba(0, 255, 65, 0.15);
+            line-height: 1.2;
+        }
+
+        .slide-title .highlight {
+            color: #66ff99;
+            text-shadow: 0 0 40px rgba(102, 255, 153, 0.2);
+        }
+
+        .slide-subtitle {
+            font-size: 1.15rem;
+            font-weight: 400;
+            color: rgba(200, 200, 200, 0.7);
+            margin-bottom: 1.2em;
+            letter-spacing: 0.02em;
+        }
+
+        .slide-content {
+            font-size: 1.05rem;
+            line-height: 1.7;
+            color: #d0d0d0;
+            max-width: 95%;
+        }
+
+        .slide-content p {
+            margin-bottom: 0.6em;
+        }
+
+        .slide-content ul {
+            list-style: none;
+            padding: 0;
+            margin: 0.5em 0;
+        }
+
+        .slide-content ul li {
+            position: relative;
+            padding: 0.25em 0 0.25em 1.8em;
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #d0d0d0;
+        }
+
+        .slide-content ul li::before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: #00ff41;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .slide-content .code-block {
+            background: rgba(0, 255, 65, 0.04);
+            border-left: 3px solid #00ff41;
+            padding: 0.8em 1.2em;
+            border-radius: 6px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            color: #b0f0b0;
+            margin: 0.6em 0;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .slide-content .code-block .kw {
+            color: #66ff99;
+        }
+        .slide-content .code-block .str {
+            color: #ffcc66;
+        }
+        .slide-content .code-block .cmt {
+            color: #668866;
+        }
+        .slide-content .code-block .fn {
+            color: #88ddff;
+        }
+        .slide-content .code-block .num {
+            color: #ff9966;
+        }
+        .slide-content .code-block .op {
+            color: #ff9966;
+        }
+        .slide-content .code-block .cl {
+            color: #cc99ff;
+        }
+
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem 2rem;
+            margin: 0.5em 0;
+        }
+
+        .grid-3col {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem 1.5rem;
+            margin: 0.5em 0;
+        }
+
+        .stat-item {
+            background: rgba(0, 255, 65, 0.03);
+            border-radius: 10px;
+            padding: 0.6rem 1rem;
+            border: 1px solid rgba(0, 255, 65, 0.06);
+        }
+
+        .stat-item .label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(160, 160, 160, 0.7);
+            font-weight: 600;
+        }
+
+        .stat-item .value {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.1rem;
+            color: #66ff99;
+            font-weight: 700;
+            margin-top: 0.1em;
+        }
+
+        .badge {
+            display: inline-block;
+            font-size: 0.65rem;
+            font-weight: 600;
+            padding: 0.15em 0.8em;
+            border-radius: 20px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-right: 0.3em;
+        }
+
+        .badge-easy {
+            background: rgba(0, 200, 100, 0.15);
+            color: #66dd88;
+            border: 1px solid rgba(0, 200, 100, 0.2);
+        }
+        .badge-medium {
+            background: rgba(255, 180, 0, 0.15);
+            color: #ffbb33;
+            border: 1px solid rgba(255, 180, 0, 0.2);
+        }
+        .badge-hard {
+            background: rgba(255, 60, 60, 0.15);
+            color: #ff6666;
+            border: 1px solid rgba(255, 60, 60, 0.2);
+        }
+        .badge-homework {
+            background: rgba(100, 150, 255, 0.12);
+            color: #88bbff;
+            border: 1px solid rgba(100, 150, 255, 0.15);
+        }
+        .badge-class {
+            background: rgba(0, 255, 65, 0.10);
+            color: #66ff99;
+            border: 1px solid rgba(0, 255, 65, 0.12);
+        }
+
+        .divider {
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, #00ff41, transparent);
+            margin: 0.4em 0 0.8em 0;
+            border-radius: 10px;
+        }
+
+        .divider-center {
+            margin: 0.6em auto 0.8em auto;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+        .text-muted {
+            color: rgba(180, 180, 180, 0.6);
+        }
+        .text-green {
+            color: #66ff99;
+        }
+        .text-sm {
+            font-size: 0.9rem;
+        }
+        .text-xs {
+            font-size: 0.75rem;
+        }
+        .mt-1 {
+            margin-top: 0.5em;
+        }
+        .mb-1 {
+            margin-bottom: 0.5em;
+        }
+
+        .flex-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .nav-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 18px;
+            border-radius: 40px;
+            border: 1px solid rgba(0, 255, 65, 0.12);
+            backdrop-filter: blur(8px);
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: rgba(200, 200, 200, 0.5);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            transition: all 0.3s ease;
+            border-radius: 6px;
+            font-family: 'Space Mono', monospace;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-btn:hover {
+            color: #00ff41;
+            background: rgba(0, 255, 65, 0.06);
+        }
+
+        .nav-btn:active {
+            transform: scale(0.92);
+        }
+
+        .nav-dots {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .nav-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            padding: 0;
+        }
+
+        .nav-dot.active {
+            background: #00ff41;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+            width: 24px;
+            border-radius: 10px;
+        }
+
+        .nav-dot:hover {
+            background: rgba(0, 255, 65, 0.3);
+        }
+
+        .slide-counter {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: rgba(200, 200, 200, 0.3);
+            letter-spacing: 0.05em;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .keyboard-hint {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.6rem;
+            color: rgba(200, 200, 200, 0.12);
+            letter-spacing: 0.1em;
+            font-family: 'Space Mono', monospace;
+            z-index: 5;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        @media (max-width: 1024px) {
+            .slide-wrapper {
+                padding: 30px 35px;
+                border-radius: 16px;
+            }
+            .slide-title {
+                font-size: 2.2rem;
+            }
+            .grid-2col {
+                grid-template-columns: 1fr;
+                gap: 0.8rem;
+            }
+            .grid-3col {
+                grid-template-columns: 1fr 1fr;
+                gap: 0.8rem;
+            }
+            .slide-content {
+                font-size: 0.95rem;
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .slide-wrapper {
+                padding: 20px 22px;
+                border-radius: 12px;
+                max-height: 95vh;
+                aspect-ratio: auto;
+                min-height: 70vh;
+            }
+            .slide-title {
+                font-size: 1.6rem;
+            }
+            .slide-content {
+                font-size: 0.85rem;
+            }
+            .slide-content ul li {
+                font-size: 0.85rem;
+                padding-left: 1.4em;
+            }
+            .grid-3col {
+                grid-template-columns: 1fr;
+            }
+            .nav-controls {
+                padding: 6px 12px;
+                gap: 12px;
+                bottom: 12px;
+            }
+            .nav-dot {
+                width: 6px;
+                height: 6px;
+            }
+            .nav-dot.active {
+                width: 18px;
+            }
+            .slide-counter {
+                font-size: 0.6rem;
+                min-width: 35px;
+            }
+            .keyboard-hint {
+                display: none;
+            }
+            .code-block {
+                font-size: 0.7rem !important;
+                padding: 0.5em 0.8em !important;
+            }
+            .stat-item .value {
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .slide-wrapper {
+                padding: 14px 16px;
+                border-radius: 8px;
+            }
+            .slide-title {
+                font-size: 1.3rem;
+            }
+            .slide-content {
+                font-size: 0.78rem;
+            }
+            .slide-content ul li {
+                font-size: 0.78rem;
+                padding-left: 1.2em;
+            }
+            .nav-controls {
+                gap: 8px;
+                padding: 4px 10px;
+            }
+            .nav-dot {
+                width: 5px;
+                height: 5px;
+            }
+            .nav-dot.active {
+                width: 14px;
+            }
+            .badge {
+                font-size: 0.5rem;
+                padding: 0.1em 0.5em;
+            }
+        }
+
+        @keyframes pulse-glow {
+            0%,
+            100% {
+                text-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
+            }
+            50% {
+                text-shadow: 0 0 40px rgba(0, 255, 65, 0.25);
+            }
+        }
+        .pulse-glow {
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .slide.active .slide-title {
+            animation: fadeInUp 0.5s ease forwards;
+        }
+        .slide.active .slide-subtitle {
+            animation: fadeInUp 0.5s ease 0.08s forwards;
+            opacity: 0;
+        }
+        .slide.active .slide-content {
+            animation: fadeInUp 0.5s ease 0.15s forwards;
+            opacity: 0;
+        }
+        .slide.active .divider {
+            animation: fadeInUp 0.5s ease 0.1s forwards;
+            opacity: 0;
+        }
+
+        .mt-2 {
+            margin-top: 1em;
+        }
+        .mb-2 {
+            margin-bottom: 1em;
+        }
+        .inline-code {
+            font-family: 'Space Mono', monospace;
+            color: #88ddff;
+            background: rgba(0, 255, 65, 0.06);
+            padding: 0.05em 0.4em;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="matrix-canvas"></canvas>
+
+    <div class="presentation-container">
+        <div class="slide-wrapper">
+            <div class="slides-container" id="slidesContainer">
+
+                <!-- SLIDE 1: TITLE -->
+                <div class="slide active" data-index="0">
+                    <div class="flex-center text-center">
+                        <div style="margin-bottom:0.3em; font-family:'Space Mono',monospace; font-size:0.8rem; color:rgba(0,255,65,0.3); letter-spacing:0.2em;">TRACK 1 — DSA · DAYS 11–12</div>
+                        <div class="slide-title" style="font-size:2.8rem; margin-bottom:0.2em;">
+                            DBMS &amp; <span class="highlight">SQL</span>
+                        </div>
+                        <div class="divider divider-center" style="width:100px;"></div>
+                        <div class="slide-subtitle" style="font-size:1.2rem; margin-bottom:0.1em;">
+                            12 Hours · Board Infinity Platform
+                        </div>
+                        <div style="display:flex; gap:1.2rem; justify-content:center; flex-wrap:wrap; margin-top:0.8em;">
+                            <span style="font-size:0.75rem; color:rgba(200,200,200,0.3); letter-spacing:0.05em;">ER Diagrams</span>
+                            <span style="font-size:0.75rem; color:rgba(200,200,200,0.3); letter-spacing:0.05em;">Normalization</span>
+                            <span style="font-size:0.75rem; color:rgba(200,200,200,0.3); letter-spacing:0.05em;">ACID</span>
+                            <span style="font-size:0.75rem; color:rgba(200,200,200,0.3); letter-spacing:0.05em;">SQL Queries</span>
+                            <span style="font-size:0.75rem; color:rgba(200,200,200,0.3); letter-spacing:0.05em;">JOINs</span>
+                        </div>
+                        <div style="margin-top:1.2em; font-size:0.7rem; color:rgba(200,200,200,0.15); font-family:'Space Mono',monospace;">
+                            ⚡ 30 slides · interactive presentation
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 2: AGENDA -->
+                <div class="slide" data-index="1">
+                    <div class="slide-title" style="font-size:2rem;">📋 Today's <span class="highlight">Agenda</span></div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <div class="grid-2col">
+                            <div>
+                                <strong style="color:#66ff99;">Day 11 — DBMS</strong>
+                                <ul>
+                                    <li>Database Design &amp; ER Diagrams</li>
+                                    <li>Normalization (1NF, 2NF, 3NF, BCNF)</li>
+                                    <li>ACID Properties &amp; Transactions</li>
+                                    <li>Indexing &amp; Query Optimization</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <strong style="color:#66ff99;">Day 12 — SQL</strong>
+                                <ul>
+                                    <li>DDL, DML, DCL, TCL</li>
+                                    <li>SELECT, WHERE, GROUP BY, HAVING</li>
+                                    <li>JOINs (INNER, LEFT, RIGHT, FULL)</li>
+                                    <li>Subqueries &amp; Window Functions</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div style="margin-top:0.8em; padding:0.6rem 1rem; background:rgba(0,255,65,0.03); border-radius:10px; border:1px solid rgba(0,255,65,0.06);">
+                            <span style="color:rgba(200,200,200,0.5); font-size:0.85rem;">🎯 <strong style="color:#66ff99;">Outcome:</strong> Design databases, write optimized SQL queries, and master DBMS concepts.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 3: WHAT IS DBMS -->
+                <div class="slide" data-index="2">
+                    <div class="slide-title" style="font-size:2rem;">🗄️ What is <span class="highlight">DBMS</span>?</div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <ul>
+                            <li><strong style="color:#66ff99;">Database Management System</strong> — software for creating, managing, and querying databases</li>
+                            <li><strong style="color:#66ff99;">Examples</strong> — MySQL, PostgreSQL, Oracle, SQL Server, MongoDB</li>
+                            <li><strong style="color:#66ff99;">Types</strong> — Relational (RDBMS), NoSQL, NewSQL</li>
+                            <li><strong style="color:#66ff99;">Purpose</strong> — efficient data storage, retrieval, security, and integrity</li>
+                        </ul>
+                        <div class="code-block" style="font-size:0.8rem;">
+                            <span class="cmt">-- Data is organized in tables (relations)</span>
+                            <span class="kw">CREATE TABLE</span> employees (
+                                id INT PRIMARY KEY,
+                                name VARCHAR(100),
+                                salary DECIMAL(10,2)
+                            );
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 4: ER DIAGRAMS -->
+                <div class="slide" data-index="3">
+                    <div class="slide-title" style="font-size:2rem;">📐 <span class="highlight">ER Diagrams</span></div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <ul>
+                            <li><strong style="color:#66ff99;">Entity</strong> — object or concept (e.g., Student, Course)</li>
+                            <li><strong style="color:#66ff99;">Attribute</strong> — properties of an entity (e.g., name, age)</li>
+                            <li><strong style="color:#66ff99;">Relationship</strong> — association between entities (e.g., Enrolls)</li>
+                            <li><strong style="color:#66ff99;">Cardinality</strong> — 1:1, 1:N, M:N</li>
+                        </ul>
+                        <div style="margin-top:0.3em; padding:0.3rem 0.8rem; background:rgba(0,255,65,0.03); border-radius:6px; border-left:3px solid #00ff41; font-size:0.85rem; color:rgba(200,200,200,0.6);">
+                            💡 <span style="color:#66ff99;">Key:</span> ER diagrams are the blueprint for database design.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 5: NORMALIZATION -->
+                <div class="slide" data-index="4">
+                    <div class="slide-title" style="font-size:2rem;">📊 <span class="highlight">Normalization</span></div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <ul>
+                            <li><strong style="color:#66ff99;">1NF</strong> — atomic values, no repeating groups</li>
+                            <li><strong style="color:#66ff99;">2NF</strong> — 1NF + no partial dependency on composite key</li>
+                            <li><strong style="color:#66ff99;">3NF</strong> — 2NF + no transitive dependency</li>
+                            <li><strong style="color:#66ff99;">BCNF</strong> — 3NF + every determinant is a candidate key</li>
+                            <li><strong style="color:#66ff99;">Purpose</strong> — eliminate redundancy, avoid anomalies</li>
+                        </ul>
+                        <div style="margin-top:0.3em; padding:0.3rem 0.8rem; background:rgba(0,255,65,0.03); border-radius:6px; border-left:3px solid #00ff41; font-size:0.85rem; color:rgba(200,200,200,0.6);">
+                            💡 <span style="color:#66ff99;">Key:</span> Higher normal forms = less redundancy, more tables.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 6: NORMALIZATION EXAMPLE -->
+                <div class="slide" data-index="5">
+                    <div class="slide-title" style="font-size:2rem;">📊 <span class="highlight">Normalization</span> Example</div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <div class="grid-2col" style="font-size:0.85rem;">
+                            <div class="stat-item">
+                                <div class="label">Before (Unnormalized)</div>
+                                <div class="value" style="font-size:0.75rem;">StudentID, Name, Course1, Course2, Course3</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="label">1NF</div>
+                                <div class="value" style="font-size:0.75rem;">StudentID, Name, Course (atomic, no repeating groups)</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="label">2NF</div>
+                                <div class="value" style="font-size:0.75rem;">Student(StudentID, Name) + Enrollment(StudentID, CourseID)</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="label">3NF</div>
+                                <div class="value" style="font-size:0.75rem;">Student(StudentID, Name, DeptID) + Department(DeptID, DeptName)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 7: ACID PROPERTIES -->
+                <div class="slide" data-index="6">
+                    <div class="slide-title" style="font-size:2rem;">🔒 <span class="highlight">ACID</span> Properties</div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <div class="grid-2col">
+                            <div class="stat-item">
+                                <div class="label">Atomicity</div>
+                                <div class="value" style="font-size:0.85rem;">All or nothing</div>
+                                <div style="font-size:0.75rem; color:rgba(200,200,200,0.4);">Transaction completes fully or not at all</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="label">Consistency</div>
+                                <div class="value" style="font-size:0.85rem;">Valid state</div>
+                                <div style="font-size:0.75rem; color:rgba(200,200,200,0.4);">Database remains in consistent state</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="label">Isolation</div>
+                                <div class="value" style="font-size:0.85rem;">Concurrent transactions</div>
+                                <div style="font-size:0.75rem; color:rgba(200,200,200,0.4);">Transactions don't interfere with each other</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="label">Durability</div>
+                                <div class="value" style="font-size:0.85rem;">Persistent</div>
+                                <div style="font-size:0.75rem; color:rgba(200,200,200,0.4);">Committed changes survive system failure</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 8: TRANSACTIONS -->
+                <div class="slide" data-index="7">
+                    <div class="slide-title" style="font-size:2rem;">🔄 <span class="highlight">Transactions</span></div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <ul>
+                            <li><strong style="color:#66ff99;">Transaction</strong> — sequence of operations treated as a single unit</li>
+                            <li><strong style="color:#66ff99;">BEGIN</strong> — start transaction</li>
+                            <li><strong style="color:#66ff99;">COMMIT</strong> — save changes permanently</li>
+                            <li><strong style="color:#66ff99;">ROLLBACK</strong> — undo all changes</li>
+                            <li><strong style="color:#66ff99;">SAVEPOINT</strong> — partial rollback</li>
+                        </ul>
+                        <div class="code-block" style="font-size:0.75rem;">
+                            BEGIN TRANSACTION;
+                            UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+                            UPDATE accounts SET balance = balance + 100 WHERE id = 2;
+                            COMMIT;  <span class="cmt">-- or ROLLBACK if any error</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 9: INDEXING -->
+                <div class="slide" data-index="8">
+                    <div class="slide-title" style="font-size:2rem;">🔍 <span class="highlight">Indexing</span></div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <ul>
+                            <li><strong style="color:#66ff99;">Purpose</strong> — speed up data retrieval (like a book's index)</li>
+                            <li><strong style="color:#66ff99;">Types</strong> — B‑Tree, Hash, Bitmap, Full‑text</li>
+                            <li><strong style="color:#66ff99;">Trade‑off</strong> — faster reads, slower writes (index maintenance)</li>
+                            <li><strong style="color:#66ff99;">When to use</strong> — columns used in WHERE, JOIN, ORDER BY</li>
+                        </ul>
+                        <div class="code-block" style="font-size:0.75rem;">
+                            <span class="kw">CREATE INDEX</span> idx_employee_name ON employees(name);
+                            <span class="cmt">-- Query becomes faster on name column</span>
+                            SELECT * FROM employees WHERE name = 'John';
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 10: SQL CATEGORIES -->
+                <div class="slide" data-index="9">
+                    <div class="slide-title" style="font-size:2rem;">📚 SQL <span class="highlight">Categories</span></div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <div class="grid-2col">
+                            <div class="stat-item">
+                                <div class="label">DDL</div>
+                                <div class="value" style="font-size:0.85rem;">Data Definition Language</div>
+                                <div style="font-size:0.75rem; color:rgba(200,200,200,0.4);">CREATE, ALTER, DROP, TRUNCATE</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="label">DML</div>
+                                <div class="value" style="font-size:0.85rem;">Data Manipulation Language</div>
+                                <div style="font-size:0.75rem; color:rgba(200,200,200,0.4);">SELECT, INSERT, UPDATE, DELETE</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="label">DCL</div>
+                                <div class="value" style="font-size:0.85rem;">Data Control Language</div>
+                                <div style="font-size:0.75rem; color:rgba(200,200,200,0.4);">GRANT, REVOKE</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="label">TCL</div>
+                                <div class="value" style="font-size:0.85rem;">Transaction Control Language</div>
+                                <div style="font-size:0.75rem; color:rgba(200,200,200,0.4);">COMMIT, ROLLBACK, SAVEPOINT</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 11: DDL COMMANDS -->
+                <div class="slide" data-index="10">
+                    <div class="slide-title" style="font-size:2rem;">🏗️ <span class="highlight">DDL</span> Commands</div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <div class="code-block" style="font-size:0.75rem;">
+                            <span class="cmt">-- CREATE table</span>
+                            <span class="kw">CREATE TABLE</span> employees (
+                                id INT PRIMARY KEY,
+                                name VARCHAR(100) NOT NULL,
+                                salary DECIMAL(10,2),
+                                dept_id INT
+                            );
+
+                            <span class="cmt">-- ALTER table</span>
+                            <span class="kw">ALTER TABLE</span> employees ADD COLUMN email VARCHAR(255);
+
+                            <span class="cmt">-- DROP table</span>
+                            <span class="kw">DROP TABLE</span> employees;
+
+                            <span class="cmt">-- TRUNCATE (removes all data, keeps structure)</span>
+                            <span class="kw">TRUNCATE TABLE</span> employees;
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 12: DML COMMANDS -->
+                <div class="slide" data-index="11">
+                    <div class="slide-title" style="font-size:2rem;">✏️ <span class="highlight">DML</span> Commands</div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <div class="code-block" style="font-size:0.75rem;">
+                            <span class="cmt">-- INSERT</span>
+                            INSERT INTO employees (id, name, salary, dept_id)
+                            VALUES (1, 'Alice', 50000, 10);
+
+                            <span class="cmt">-- SELECT</span>
+                            SELECT * FROM employees WHERE salary > 40000;
+
+                            <span class="cmt">-- UPDATE</span>
+                            UPDATE employees SET salary = salary * 1.10 WHERE dept_id = 10;
+
+                            <span class="cmt">-- DELETE</span>
+                            DELETE FROM employees WHERE id = 1;
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 13: SELECT CLAUSES -->
+                <div class="slide" data-index="12">
+                    <div class="slide-title" style="font-size:2rem;">🔍 <span class="highlight">SELECT</span> Clauses</div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <div class="code-block" style="font-size:0.75rem;">
+                            <span class="cmt">-- ORDER BY (sorting)</span>
+                            SELECT * FROM employees ORDER BY salary DESC;
+
+                            <span class="cmt">-- GROUP BY + HAVING</span>
+                            SELECT dept_id, AVG(salary) AS avg_salary
+                            FROM employees
+                            GROUP BY dept_id
+                            HAVING AVG(salary) > 50000;
+
+                            <span class="cmt">-- LIMIT / TOP</span>
+                            SELECT * FROM employees ORDER BY salary DESC LIMIT 5;
+
+                            <span class="cmt">-- DISTINCT</span>
+                            SELECT DISTINCT dept_id FROM employees;
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 14: JOINS -->
+                <div class="slide" data-index="13">
+                    <div class="slide-title" style="font-size:2rem;">🔗 <span class="highlight">JOINs</span></div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <div class="grid-2col" style="font-size:0.85rem;">
+                            <div class="stat-item">
+                                <div class="label">INNER JOIN</div>
+                                <div class="value" style="font-size:0.75rem;">Only matching rows</div>
+                                <div style="font-size:0.7rem; color:rgba(200,200,200,0.4);">Most common JOIN</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="label">LEFT JOIN</div>
+                                <div class="value" style="font-size:0.75rem;">All left rows + matches</div>
+                                <div style="font-size:0.7rem; color:rgba(200,200,200,0.4);">NULL for non‑matching right</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="label">RIGHT JOIN</div>
+                                <div class="value" style="font-size:0.75rem;">All right rows + matches</div>
+                                <div style="font-size:0.7rem; color:rgba(200,200,200,0.4);">NULL for non‑matching left</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="label">FULL JOIN</div>
+                                <div class="value" style="font-size:0.75rem;">All rows from both</div>
+                                <div style="font-size:0.7rem; color:rgba(200,200,200,0.4);">NULL where no match</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 15: JOIN EXAMPLES -->
+                <div class="slide" data-index="14">
+                    <div class="slide-title" style="font-size:2rem;">🔗 <span class="highlight">JOIN</span> Examples</div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <div class="code-block" style="font-size:0.7rem;">
+                            <span class="cmt">-- Tables: employees(id, name, dept_id), departments(id, name)</span>
+
+                            <span class="cmt">-- INNER JOIN: employees with department</span>
+                            SELECT e.name, d.name AS dept_name
+                            FROM employees e
+                            INNER JOIN departments d ON e.dept_id = d.id;
+
+                            <span class="cmt">-- LEFT JOIN: all employees, even without department</span>
+                            SELECT e.name, d.name AS dept_name
+                            FROM employees e
+                            LEFT JOIN departments d ON e.dept_id = d.id;
+
+                            <span class="cmt">-- Self‑join: employees and their managers</span>
+                            SELECT e1.name AS employee, e2.name AS manager
+                            FROM employees e1
+                            LEFT JOIN employees e2 ON e1.manager_id = e2.id;
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 16: SUBQUERIES -->
+                <div class="slide" data-index="15">
+                    <div class="slide-title" style="font-size:2rem;">📦 <span class="highlight">Subqueries</span></div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <ul>
+                            <li><strong style="color:#66ff99;">Subquery</strong> — query inside another query (nested)</li>
+                            <li><strong style="color:#66ff99;">Types</strong> — scalar, row, table, correlated</li>
+                            <li><strong style="color:#66ff99;">Operators</strong> — =, >, IN, EXISTS, ANY, ALL</li>
+                        </ul>
+                        <div class="code-block" style="font-size:0.7rem;">
+                            <span class="cmt">-- Find employees earning more than average</span>
+                            SELECT name, salary
+                            FROM employees
+                            WHERE salary > (SELECT AVG(salary) FROM employees);
+
+                            <span class="cmt">-- Find departments with no employees</span>
+                            SELECT * FROM departments
+                            WHERE id NOT IN (SELECT DISTINCT dept_id FROM employees);
+
+                            <span class="cmt">-- Correlated subquery</span>
+                            SELECT e1.name, e1.salary
+                            FROM employees e1
+                            WHERE salary > (SELECT AVG(salary) FROM employees e2
+                                            WHERE e2.dept_id = e1.dept_id);
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 17: WINDOW FUNCTIONS -->
+                <div class="slide" data-index="16">
+                    <div class="slide-title" style="font-size:2rem;">🪟 <span class="highlight">Window Functions</span></div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <ul>
+                            <li><strong style="color:#66ff99;">ROW_NUMBER()</strong> — sequential number per partition</li>
+                            <li><strong style="color:#66ff99;">RANK() / DENSE_RANK()</strong> — ranking with/without gaps</li>
+                            <li><strong style="color:#66ff99;">LAG() / LEAD()</strong> — access previous/next row</li>
+                            <li><strong style="color:#66ff99;">SUM() OVER</strong> — cumulative sums</li>
+                        </ul>
+                        <div class="code-block" style="font-size:0.65rem;">
+                            <span class="cmt">-- Rank employees by salary within each department</span>
+                            SELECT name, dept_id, salary,
+                                RANK() OVER (PARTITION BY dept_id ORDER BY salary DESC) AS rank
+                            FROM employees;
+
+                            <span class="cmt">-- Cumulative salary by department</span>
+                            SELECT name, dept_id, salary,
+                                SUM(salary) OVER (PARTITION BY dept_id ORDER BY name) AS cumulative
+                            FROM employees;
+
+                            <span class="cmt">-- Previous employee's salary</span>
+                            SELECT name, salary,
+                                LAG(salary, 1) OVER (ORDER BY name) AS prev_salary
+                            FROM employees;
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 18: VIEWS -->
+                <div class="slide" data-index="17">
+                    <div class="slide-title" style="font-size:2rem;">👁️ <span class="highlight">Views</span></div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <ul>
+                            <li><strong style="color:#66ff99;">View</strong> — virtual table based on a SELECT query</li>
+                            <li><strong style="color:#66ff99;">Benefits</strong> — security, simplicity, data abstraction</li>
+                            <li><strong style="color:#66ff99;">Materialized View</strong> — stores data physically (faster reads)</li>
+                        </ul>
+                        <div class="code-block" style="font-size:0.75rem;">
+                            <span class="kw">CREATE VIEW</span> high_earners AS
+                            SELECT name, salary, dept_id
+                            FROM employees
+                            WHERE salary > 60000;
+
+                            <span class="cmt">-- Query the view like a table</span>
+                            SELECT * FROM high_earners ORDER BY salary DESC;
+
+                            <span class="cmt">-- Drop view</span>
+                            <span class="kw">DROP VIEW</span> high_earners;
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 19: STORED PROCEDURES -->
+                <div class="slide" data-index="18">
+                    <div class="slide-title" style="font-size:2rem;">⚙️ <span class="highlight">Stored Procedures</span></div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <ul>
+                            <li><strong style="color:#66ff99;">Procedure</strong> — reusable SQL code with parameters</li>
+                            <li><strong style="color:#66ff99;">Benefits</strong> — performance, security, modularity</li>
+                            <li><strong style="color:#66ff99;">Can contain</strong> — SELECT, UPDATE, INSERT, DELETE, logic</li>
+                        </ul>
+                        <div class="code-block" style="font-size:0.7rem;">
+                            <span class="kw">CREATE PROCEDURE</span> give_raise(IN dept_id INT, IN percent DECIMAL)
+                            BEGIN
+                                UPDATE employees
+                                SET salary = salary * (1 + percent / 100)
+                                WHERE dept_id = dept_id;
+                            END;
+
+                            <span class="cmt">-- Call the procedure</span>
+                            CALL give_raise(10, 5.0);  <span class="cmt">-- 5% raise for dept 10</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 20: TRIGGERS -->
+                <div class="slide" data-index="19">
+                    <div class="slide-title" style="font-size:2rem;">⚡ <span class="highlight">Triggers</span></div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <ul>
+                            <li><strong style="color:#66ff99;">Trigger</strong> — automatically executes on INSERT, UPDATE, DELETE</li>
+                            <li><strong style="color:#66ff99;">Timing</strong> — BEFORE or AFTER the event</li>
+                            <li><strong style="color:#66ff99;">Use cases</strong> — auditing, validation, cascading updates</li>
+                        </ul>
+                        <div class="code-block" style="font-size:0.65rem;">
+                            <span class="kw">CREATE TRIGGER</span> audit_salary_change
+                            AFTER UPDATE ON employees
+                            FOR EACH ROW
+                            BEGIN
+                                INSERT INTO salary_audit(employee_id, old_salary, new_salary, changed_at)
+                                VALUES (OLD.id, OLD.salary, NEW.salary, NOW());
+                            END;
+
+                            <span class="cmt">-- Now any salary update logs the change</span>
+                            UPDATE employees SET salary = 55000 WHERE id = 1;
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 21: LEARNING OUTCOMES -->
+                <div class="slide" data-index="20">
+                    <div class="slide-title" style="font-size:2rem;">🎯 Learning <span class="highlight">Outcomes</span></div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <p style="font-size:1.05rem; color:#66ff99;">By the end of these two days, you will be able to:</p>
+                        <ul>
+                            <li>✅ Design databases using <strong style="color:#66ff99;">ER diagrams</strong></li>
+                            <li>✅ Apply <strong style="color:#66ff99;">normalization</strong> up to BCNF</li>
+                            <li>✅ Understand <strong style="color:#66ff99;">ACID</strong> properties and transactions</li>
+                            <li>✅ Write <strong style="color:#66ff99;">complex SQL queries</strong> with JOINs, subqueries, and window functions</li>
+                            <li>✅ Use <strong style="color:#66ff99;">views, stored procedures, and triggers</strong></li>
+                            <li>✅ Optimize queries using <strong style="color:#66ff99;">indexing</strong></li>
+                            <li>✅ Solve <strong style="color:#66ff99;">8 DBMS/SQL problems</strong> with confidence</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- SLIDE 22: PRACTICE OVERVIEW -->
+                <div class="slide" data-index="21">
+                    <div class="slide-title" style="font-size:2rem;">📝 Practice <span class="highlight">Problems</span></div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.6em;">
+                            <span class="badge badge-easy">Easy · 2</span>
+                            <span class="badge badge-medium">Medium · 4</span>
+                            <span class="badge badge-hard">Hard · 2</span>
+                            <span class="badge badge-class">Class · 4</span>
+                            <span class="badge badge-homework">Homework · 4</span>
+                        </div>
+                        <div class="grid-2col" style="font-size:0.9rem;">
+                            <div>
+                                <strong style="color:#66ff99;">Classwork</strong>
+                                <ul>
+                                    <li>ER Diagram Design <span class="badge badge-easy" style="font-size:0.55rem;">Easy</span></li>
+                                    <li>Normalization Exercise <span class="badge badge-medium" style="font-size:0.55rem;">Medium</span></li>
+                                    <li>Basic SQL Queries <span class="badge badge-easy" style="font-size:0.55rem;">Easy</span></li>
+                                    <li>JOINs &amp; Subqueries <span class="badge badge-medium" style="font-size:0.55rem;">Medium</span></li>
+                                </ul>
+                            </div>
+                            <div>
+                                <strong style="color:#66ff99;">Homework</strong>
+                                <ul>
+                                    <li>Complex JOIN Queries <span class="badge badge-medium" style="font-size:0.55rem;">Medium</span></li>
+                                    <li>Window Functions <span class="badge badge-medium" style="font-size:0.55rem;">Medium</span></li>
+                                    <li>Stored Procedure Design <span class="badge badge-hard" style="font-size:0.55rem;">Hard</span></li>
+                                    <li>Database Normalization Project <span class="badge badge-hard" style="font-size:0.55rem;">Hard</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 23: Q1 — ER DIAGRAM -->
+                <div class="slide" data-index="22">
+                    <div class="slide-title" style="font-size:1.8rem;">📐 Q1 — <span class="highlight">ER Diagram</span> Design</div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.4em;">
+                            <span class="badge badge-easy">Easy</span>
+                            <span class="badge badge-class">Class</span>
+                        </div>
+                        <p><strong style="color:#66ff99;">Problem:</strong> Design an ER diagram for a library management system.</p>
+                        <div style="font-size:0.9rem; color:rgba(200,200,200,0.7);">
+                            <strong style="color:#66ff99;">Entities:</strong> Book, Member, Loan<br/>
+                            <strong style="color:#66ff99;">Relationships:</strong> Member borrows Book (M:N with loan date, due date)<br/>
+                            <strong style="color:#66ff99;">Attributes:</strong> Book(ISBN, title, author, year), Member(id, name, email)<br/>
+                            <strong style="color:#66ff99;">Cardinality:</strong> Member (1) → Loan (M) → Book (1)
+                        </div>
+                        <div style="margin-top:0.3em; padding:0.3rem 0.8rem; background:rgba(0,255,65,0.03); border-radius:6px; border-left:3px solid #00ff41; font-size:0.85rem; color:rgba(200,200,200,0.6);">
+                            💡 <span style="color:#66ff99;">Key:</span> Identify entities, attributes, and relationships first.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 24: Q2 — NORMALIZATION -->
+                <div class="slide" data-index="23">
+                    <div class="slide-title" style="font-size:1.8rem;">📊 Q2 — <span class="highlight">Normalization</span></div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.4em;">
+                            <span class="badge badge-medium">Medium</span>
+                            <span class="badge badge-class">Class</span>
+                        </div>
+                        <p><strong style="color:#66ff99;">Problem:</strong> Normalize the following table to 3NF.</p>
+                        <div class="code-block" style="font-size:0.65rem;">
+                            <span class="cmt">-- Table: Order(OrderID, CustomerID, CustomerName, ProductID, ProductName, Quantity, Price)</span>
+                            <span class="cmt">-- FD: CustomerID → CustomerName, ProductID → ProductName, OrderID → CustomerID, ProductID, Quantity</span>
+                            <span class="cmt">-- Solution:</span>
+                            <span class="cmt">-- 1. Orders(OrderID, CustomerID, ProductID, Quantity)</span>
+                            <span class="cmt">-- 2. Customers(CustomerID, CustomerName)</span>
+                            <span class="cmt">-- 3. Products(ProductID, ProductName, Price)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 25: Q3 — BASIC SQL -->
+                <div class="slide" data-index="24">
+                    <div class="slide-title" style="font-size:1.8rem;">🔍 Q3 — <span class="highlight">Basic SQL</span> Queries</div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.4em;">
+                            <span class="badge badge-easy">Easy</span>
+                            <span class="badge badge-class">Class</span>
+                        </div>
+                        <p><strong style="color:#66ff99;">Problem:</strong> Write SQL queries for the following tasks.</p>
+                        <div class="code-block" style="font-size:0.7rem;">
+                            <span class="cmt">-- 1. Find all employees with salary > 50000</span>
+                            SELECT * FROM employees WHERE salary > 50000;
+
+                            <span class="cmt">-- 2. Count employees in each department</span>
+                            SELECT dept_id, COUNT(*) AS count FROM employees GROUP BY dept_id;
+
+                            <span class="cmt">-- 3. Find the highest salary</span>
+                            SELECT MAX(salary) FROM employees;
+
+                            <span class="cmt">-- 4. Find employees whose name starts with 'A'</span>
+                            SELECT * FROM employees WHERE name LIKE 'A%';
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 26: Q4 — JOINS & SUBQUERIES -->
+                <div class="slide" data-index="25">
+                    <div class="slide-title" style="font-size:1.7rem;">🔗 Q4 — <span class="highlight">JOINs &amp; Subqueries</span></div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.4em;">
+                            <span class="badge badge-medium">Medium</span>
+                            <span class="badge badge-class">Class</span>
+                        </div>
+                        <p><strong style="color:#66ff99;">Problem:</strong> Write queries using JOINs and subqueries.</p>
+                        <div class="code-block" style="font-size:0.65rem;">
+                            <span class="cmt">-- 1. List employees with their department names (INNER JOIN)</span>
+                            SELECT e.name, d.name AS dept_name
+                            FROM employees e
+                            INNER JOIN departments d ON e.dept_id = d.id;
+
+                            <span class="cmt">-- 2. Find departments with no employees (LEFT JOIN + NULL)</span>
+                            SELECT d.* FROM departments d
+                            LEFT JOIN employees e ON d.id = e.dept_id
+                            WHERE e.id IS NULL;
+
+                            <span class="cmt">-- 3. Find employees earning more than department average (correlated subquery)</span>
+                            SELECT e1.name, e1.salary, e1.dept_id
+                            FROM employees e1
+                            WHERE salary > (SELECT AVG(salary) FROM employees e2
+                                            WHERE e2.dept_id = e1.dept_id);
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 27: Q5 — WINDOW FUNCTIONS (HOMEWORK) -->
+                <div class="slide" data-index="26">
+                    <div class="slide-title" style="font-size:1.7rem;">🪟 Q5 — <span class="highlight">Window Functions</span></div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.4em;">
+                            <span class="badge badge-medium">Medium</span>
+                            <span class="badge badge-homework">Homework</span>
+                        </div>
+                        <p><strong style="color:#66ff99;">Problem:</strong> Write queries using window functions.</p>
+                        <div class="code-block" style="font-size:0.6rem;">
+                            <span class="cmt">-- 1. Rank employees by salary overall</span>
+                            SELECT name, salary, RANK() OVER (ORDER BY salary DESC) AS rank
+                            FROM employees;
+
+                            <span class="cmt">-- 2. Running total of salaries by department</span>
+                            SELECT name, dept_id, salary,
+                                SUM(salary) OVER (PARTITION BY dept_id ORDER BY name) AS running_total
+                            FROM employees;
+
+                            <span class="cmt">-- 3. Salary difference from previous employee</span>
+                            SELECT name, salary,
+                                salary - LAG(salary, 1, 0) OVER (ORDER BY name) AS diff_from_prev
+                            FROM employees;
+
+                            <span class="cmt">-- 4. Top 3 earners per department</span>
+                            SELECT name, dept_id, salary, rank
+                            FROM (
+                                SELECT *, RANK() OVER (PARTITION BY dept_id ORDER BY salary DESC) AS rank
+                                FROM employees
+                            ) t WHERE rank <= 3;
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 28: Q6 — STORED PROCEDURE (HOMEWORK) -->
+                <div class="slide" data-index="27">
+                    <div class="slide-title" style="font-size:1.6rem;">⚙️ Q6 — <span class="highlight">Stored Procedure</span></div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.4em;">
+                            <span class="badge badge-hard">Hard</span>
+                            <span class="badge badge-homework">Homework</span>
+                        </div>
+                        <p><strong style="color:#66ff99;">Problem:</strong> Create a stored procedure to transfer funds between accounts.</p>
+                        <div class="code-block" style="font-size:0.6rem;">
+                            <span class="kw">CREATE PROCEDURE</span> transfer_funds(
+                                IN from_account INT,
+                                IN to_account INT,
+                                IN amount DECIMAL(10,2)
+                            )
+                            BEGIN
+                                DECLARE from_balance DECIMAL(10,2);
+                                START TRANSACTION;
+                                SELECT balance INTO from_balance FROM accounts WHERE id = from_account;
+                                IF from_balance < amount THEN
+                                    ROLLBACK;
+                                    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Insufficient funds';
+                                ELSE
+                                    UPDATE accounts SET balance = balance - amount WHERE id = from_account;
+                                    UPDATE accounts SET balance = balance + amount WHERE id = to_account;
+                                    COMMIT;
+                                END IF;
+                            END;
+                            <span class="cmt">-- Call: CALL transfer_funds(1, 2, 100.00);</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 29: KEY TAKEAWAYS -->
+                <div class="slide" data-index="28">
+                    <div class="slide-title" style="font-size:2rem;">🔑 Key <span class="highlight">Takeaways</span></div>
+                    <div class="divider"></div>
+                    <div class="slide-content">
+                        <ul>
+                            <li>✅ <strong style="color:#66ff99;">DBMS</strong> — design, normalize, understand ACID</li>
+                            <li>✅ <strong style="color:#66ff99;">SQL</strong> — DDL, DML, DCL, TCL categories</li>
+                            <li>✅ <strong style="color:#66ff99;">JOINs</strong> — INNER, LEFT, RIGHT, FULL, Self‑join</li>
+                            <li>✅ <strong style="color:#66ff99;">Subqueries</strong> — nested queries for complex logic</li>
+                            <li>✅ <strong style="color:#66ff99;">Window Functions</strong> — RANK, LAG, SUM OVER</li>
+                            <li>✅ <strong style="color:#66ff99;">Procedures &amp; Triggers</strong> — automate business logic</li>
+                            <li>✅ <strong style="color:#66ff99;">Indexing</strong> — optimize query performance</li>
+                            <li>✅ <strong style="color:#66ff99;">Practice</strong> — 8 problems cover all key areas</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- SLIDE 30: THANK YOU -->
+                <div class="slide" data-index="29">
+                    <div class="flex-center text-center">
+                        <div style="font-family:'Space Mono',monospace; font-size:0.9rem; color:rgba(0,255,65,0.25); letter-spacing:0.15em; margin-bottom:0.3em;">
+                            BOARD INFINITY · TRACK 1 — DSA · DAYS 11–12
+                        </div>
+                        <div class="slide-title" style="font-size:3.2rem; margin-bottom:0.2em;">
+                            Thank <span class="highlight">You</span>
+                        </div>
+                        <div class="divider divider-center" style="width:80px;"></div>
+                        <div class="slide-subtitle" style="font-size:1.1rem; color:rgba(200,200,200,0.4);">
+                            DBMS &amp; SQL — now you've got them covered.
+                        </div>
+                        <div style="margin-top:0.6em; font-size:0.85rem; color:rgba(200,200,200,0.2); font-family:'Space Mono',monospace;">
+                            Next up: System Design &amp; Interview Prep
+                        </div>
+                        <div style="margin-top:0.5em; display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+                            <span style="font-size:0.6rem; color:rgba(0,255,65,0.15);">◈</span>
+                            <span style="font-size:0.6rem; color:rgba(0,255,65,0.15);">◈</span>
+                            <span style="font-size:0.6rem; color:rgba(0,255,65,0.15);">◈</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- NAVIGATION -->
+            <div class="nav-controls">
+                <button class="nav-btn" id="prevBtn" aria-label="Previous">◀</button>
+                <div class="nav-dots" id="navDots"></div>
+                <span class="slide-counter" id="slideCounter">1 / 30</span>
+                <button class="nav-btn" id="nextBtn" aria-label="Next">▶</button>
+            </div>
+
+            <div class="keyboard-hint">←  →  or  k  j</div>
+
+        </div>
+    </div>
+
+    <script>
+        // MATRIX RAIN
+        (function matrixRain() {
+            const canvas = document.getElementById('matrix-canvas');
+            const ctx = canvas.getContext('2d');
+            let w, h, columns, drops, fontSize = 16;
+            const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+
+            function resize() {
+                w = canvas.width = window.innerWidth;
+                h = canvas.height = window.innerHeight;
+                columns = Math.floor(w / fontSize);
+                drops = new Array(columns).fill(1);
+            }
+
+            function draw() {
+                ctx.fillStyle = 'rgba(10, 10, 10, 0.05)';
+                ctx.fillRect(0, 0, w, h);
+                ctx.fillStyle = '#00ff41';
+                ctx.font = fontSize + 'px monospace';
+
+                for (let i = 0; i < drops.length; i++) {
+                    const ch = chars.charAt(Math.floor(Math.random() * chars.length));
+                    const x = i * fontSize;
+                    const y = drops[i] * fontSize;
+                    ctx.fillStyle = `rgba(0, 255, 65, ${Math.random() * 0.3 + 0.1})`;
+                    ctx.fillText(ch, x, y);
+                    if (y > h && Math.random() > 0.975) drops[i] = 0;
+                    drops[i]++;
+                }
+                requestAnimationFrame(draw);
+            }
+
+            window.addEventListener('resize', resize);
+            resize();
+            draw();
+        })();
+
+        // SLIDE ENGINE
+        (function slideEngine() {
+            const slides = document.querySelectorAll('.slide');
+            const dotsContainer = document.getElementById('navDots');
+            const counter = document.getElementById('slideCounter');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            let current = 0;
+            const total = slides.length;
+
+            for (let i = 0; i < total; i++) {
+                const dot = document.createElement('button');
+                dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+                dot.setAttribute('data-index', i);
+                dot.addEventListener('click', () => goTo(i));
+                dotsContainer.appendChild(dot);
+            }
+
+            function goTo(index) {
+                if (index === current) return;
+                if (index < 0) index = 0;
+                if (index >= total) index = total - 1;
+
+                slides[current].classList.remove('active');
+                slides[index].classList.add('active');
+
+                const dots = dotsContainer.querySelectorAll('.nav-dot');
+                dots[current].classList.remove('active');
+                dots[index].classList.add('active');
+
+                current = index;
+                counter.textContent = (current + 1) + ' / ' + total;
+            }
+
+            function next() { goTo(current + 1); }
+
+            function prev() { goTo(current - 1); }
+
+            prevBtn.addEventListener('click', prev);
+            nextBtn.addEventListener('click', next);
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'j' || e.key === ' ') {
+                    e.preventDefault();
+                    next();
+                } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'k') {
+                    e.preventDefault();
+                    prev();
+                } else if (e.key === 'Home') {
+                    e.preventDefault();
+                    goTo(0);
+                } else if (e.key === 'End') {
+                    e.preventDefault();
+                    goTo(total - 1);
+                }
+            });
+
+            let touchStartX = 0;
+            let touchStartY = 0;
+            const wrapper = document.querySelector('.slide-wrapper');
+
+            wrapper.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+                touchStartY = e.changedTouches[0].screenY;
+            }, { passive: true });
+
+            wrapper.addEventListener('touchend', (e) => {
+                const dx = e.changedTouches[0].screenX - touchStartX;
+                const dy = e.changedTouches[0].screenY - touchStartY;
+                if (Math.abs(dx) < 30 && Math.abs(dy) < 30) return;
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    if (dx < 0) next();
+                    else prev();
+                }
+            }, { passive: true });
+
+            goTo(0);
+
+            window.slideGoTo = goTo;
+            window.slideNext = next;
+            window.slidePrev = prev;
+        })();
+    </script>
+
+</body>
+</html>

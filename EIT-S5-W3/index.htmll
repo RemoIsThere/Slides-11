@@ -1,0 +1,2108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 3 — Core Java Practice → OOP Bridge | 5th Semester</title>
+<style>
+  :root {
+    --green: #00ff41;
+    --green-bright: #7dffa0;
+    --green-mid: #00c832;
+    --green-dim: #008f11;
+    --green-dark: #003b00;
+    --bg: #000000;
+    --panel: #060d06;
+    --panel-2: #0a140a;
+    --text: #c9f5c9;
+    --text-dim: #7fae7f;
+    --border: rgba(0, 255, 65, 0.25);
+    --border-soft: rgba(0, 255, 65, 0.12);
+    --amber: #ffb000;
+    --red: #ff3b3b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Consolas", "Courier New", "SF Mono", monospace;
+    overflow: hidden;
+  }
+
+  /* ---------- Matrix rain background ---------- */
+  #matrix {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.18;
+    pointer-events: none;
+  }
+
+  /* ---------- Deck / slides ---------- */
+  .deck {
+    position: relative;
+    z-index: 1;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+    padding: 3.2vh 4vw 7vh 4vw;
+    overflow-y: auto;
+    overflow-x: hidden;
+    animation: fadeUp 0.35s ease-out;
+  }
+
+  .slide.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .slide::-webkit-scrollbar { width: 8px; }
+  .slide::-webkit-scrollbar-track { background: transparent; }
+  .slide::-webkit-scrollbar-thumb {
+    background: var(--green-dark);
+    border-radius: 4px;
+  }
+
+  .slide-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  /* ---------- Headings ---------- */
+  .slide-head {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1.4vh;
+    margin-bottom: 2.4vh;
+  }
+
+  .slide-tag {
+    display: inline-block;
+    font-size: clamp(10px, 0.85vw, 13px);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--green-mid);
+    border: 1px solid var(--border);
+    padding: 3px 10px;
+    border-radius: 3px;
+    margin-bottom: 1vh;
+    background: rgba(0, 255, 65, 0.05);
+  }
+
+  h1 {
+    font-size: clamp(26px, 3.6vw, 52px);
+    color: var(--green);
+    text-shadow: 0 0 14px rgba(0, 255, 65, 0.55);
+    letter-spacing: 0.02em;
+    line-height: 1.15;
+  }
+
+  h2 {
+    font-size: clamp(20px, 2.4vw, 34px);
+    color: var(--green);
+    text-shadow: 0 0 10px rgba(0, 255, 65, 0.4);
+    letter-spacing: 0.01em;
+  }
+
+  h3 {
+    font-size: clamp(15px, 1.35vw, 21px);
+    color: var(--green-bright);
+    margin-bottom: 1vh;
+    letter-spacing: 0.02em;
+  }
+
+  h4 {
+    font-size: clamp(13px, 1.1vw, 17px);
+    color: var(--green-mid);
+    margin-bottom: 0.8vh;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  p, li {
+    font-size: clamp(13px, 1.05vw, 17px);
+    line-height: 1.65;
+    color: var(--text);
+  }
+
+  ul, ol { padding-left: 1.4em; }
+  li { margin-bottom: 0.55vh; }
+  li::marker { color: var(--green-mid); }
+
+  strong { color: var(--green-bright); font-weight: 600; }
+  em { color: var(--amber); font-style: normal; }
+
+  /* ---------- Layout helpers ---------- */
+  .cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.2vw;
+  }
+  .cols-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.6vw;
+  }
+  .stack > * + * { margin-top: 1.6vh; }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--green-dim);
+    border-radius: 4px;
+    padding: 1.6vh 1.4vw;
+  }
+  .card.accent { border-left-color: var(--green); box-shadow: 0 0 18px rgba(0,255,65,0.08); }
+  .card.warn { border-left-color: var(--amber); }
+  .card.danger { border-left-color: var(--red); }
+
+  .card h3 { margin-bottom: 0.8vh; }
+
+  /* ---------- Code blocks ---------- */
+  pre {
+    background: #030803;
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--green-mid);
+    border-radius: 4px;
+    padding: 1.2vh 1vw;
+    overflow-x: auto;
+    font-size: clamp(11px, 0.92vw, 15px);
+    line-height: 1.55;
+    color: var(--green-bright);
+    white-space: pre;
+  }
+  pre .kw  { color: #66d9ff; }
+  pre .str { color: #ffd479; }
+  pre .cmt { color: #4d7a4d; font-style: italic; }
+  pre .num { color: #ff9d5c; }
+  pre .cls { color: #7dffa0; }
+
+  code {
+    font-family: inherit;
+    background: rgba(0, 255, 65, 0.08);
+    border: 1px solid var(--border-soft);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--green-bright);
+    font-size: 0.95em;
+  }
+
+  /* ---------- Tables ---------- */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: clamp(11px, 0.95vw, 15px);
+    margin-top: 0.6vh;
+  }
+  th, td {
+    border: 1px solid var(--border-soft);
+    padding: 0.7vh 0.8vw;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: rgba(0, 255, 65, 0.10);
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.85em;
+  }
+  td { color: var(--text); }
+  tr:nth-child(even) td { background: rgba(0, 255, 65, 0.025); }
+
+  /* ---------- Section divider slides ---------- */
+  .section-slide .slide-inner {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .section-slide .num {
+    font-size: clamp(70px, 10vw, 160px);
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--green-dim);
+    line-height: 1;
+    margin-bottom: 1vh;
+    letter-spacing: 0.02em;
+  }
+  .section-slide h1 {
+    font-size: clamp(34px, 5vw, 72px);
+  }
+  .section-slide .rule {
+    width: 120px;
+    height: 3px;
+    background: var(--green);
+    margin: 2.2vh 0;
+    box-shadow: 0 0 14px var(--green);
+  }
+  .section-slide p {
+    color: var(--text-dim);
+    max-width: 760px;
+    font-size: clamp(14px, 1.15vw, 19px);
+  }
+
+  /* ---------- Title slide ---------- */
+  .title-slide .slide-inner {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .title-slide .kicker {
+    color: var(--green-mid);
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    font-size: clamp(11px, 0.9vw, 14px);
+    margin-bottom: 2vh;
+  }
+  .title-slide h1 {
+    font-size: clamp(34px, 5.2vw, 76px);
+    line-height: 1.05;
+    margin-bottom: 1.6vh;
+  }
+  .title-slide .sub {
+    color: var(--text-dim);
+    font-size: clamp(14px, 1.2vw, 20px);
+    max-width: 900px;
+    line-height: 1.6;
+  }
+  .title-slide .meta {
+    margin-top: 4vh;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .chip {
+    border: 1px solid var(--border);
+    background: rgba(0, 255, 65, 0.05);
+    color: var(--green-bright);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: clamp(11px, 0.9vw, 14px);
+    letter-spacing: 0.06em;
+  }
+
+  /* ---------- HUD ---------- */
+  .hud {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 22px;
+    background: linear-gradient(to top, rgba(0,0,0,0.92), rgba(0,0,0,0));
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    pointer-events: none;
+  }
+  .hud .counter { color: var(--green); }
+  .hud .brand { color: var(--green-dim); text-transform: uppercase; }
+
+  .nav {
+    position: fixed;
+    right: 22px;
+    bottom: 42px;
+    z-index: 6;
+    display: flex;
+    gap: 10px;
+  }
+  .nav button {
+    width: 42px; height: 42px;
+    background: rgba(0, 20, 0, 0.7);
+    border: 1px solid var(--border);
+    color: var(--green);
+    font-family: inherit;
+    font-size: 18px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    display: grid;
+    place-items: center;
+  }
+  .nav button:hover {
+    background: rgba(0, 255, 65, 0.12);
+    box-shadow: 0 0 14px rgba(0, 255, 65, 0.35);
+  }
+  .nav button:disabled { opacity: 0.25; cursor: not-allowed; }
+
+  .progress {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: 3px;
+    background: rgba(0, 255, 65, 0.08);
+    z-index: 7;
+  }
+  .progress > i {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: var(--green);
+    box-shadow: 0 0 10px var(--green);
+    transition: width 0.25s ease;
+  }
+
+  /* ---------- Misc ---------- */
+  .pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    border: 1px solid var(--border);
+    color: var(--green-bright);
+    background: rgba(0,255,65,0.06);
+    letter-spacing: 0.06em;
+  }
+  .muted { color: var(--text-dim); }
+  .green { color: var(--green); }
+  .amber { color: var(--amber); }
+  .red { color: var(--red); }
+
+  .blink::after {
+    content: "_";
+    animation: blink 1s steps(2, start) infinite;
+    color: var(--green);
+  }
+  @keyframes blink { to { visibility: hidden; } }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.4vh 1.6vw;
+  }
+
+  .term {
+    background: #030803;
+    border: 1px solid var(--border-soft);
+    border-radius: 4px;
+    padding: 1.2vh 1vw;
+    font-size: clamp(11px, 0.92vw, 15px);
+    line-height: 1.55;
+  }
+  .term .prompt { color: var(--green-mid); }
+  .term .out { color: var(--text-dim); }
+  .term .err { color: var(--red); }
+
+  @media (max-width: 900px) {
+    .cols, .cols-3, .grid-2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="matrix"></canvas>
+
+<div class="deck" id="deck">
+
+  <!-- ==================== 1. TITLE ==================== -->
+  <section class="slide title-slide active">
+    <div class="slide-inner">
+      <div class="kicker">5th Semester &nbsp;|&nbsp; Week 3 &nbsp;|&nbsp; 14–20 September 2026</div>
+      <h1>Core Java Practice<br>→ OOP Bridge</h1>
+      <p class="sub">
+        The transition week. From writing everything inside <code>main()</code>
+        to designing classes, objects, and behaviour. Strings, wrappers, varargs,
+        packages, access control, debugging — and the object-oriented mindset.
+      </p>
+      <div class="meta">
+        <span class="chip">String &amp; StringBuilder</span>
+        <span class="chip">Wrapper Classes</span>
+        <span class="chip">Varargs</span>
+        <span class="chip">Packages &amp; Imports</span>
+        <span class="chip">Access Modifiers</span>
+        <span class="chip">Debugging</span>
+        <span class="chip">Classes &amp; Objects</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 2. WEEK OVERVIEW ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Overview</span>
+        <h2>What This Week Covers</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>1. String Handling</h3>
+            <p><code>String</code>, <code>StringBuilder</code>, immutability, common manipulation methods.</p>
+          </div>
+          <div class="card accent">
+            <h3>2. Wrapper Classes</h3>
+            <p><code>Integer</code>, <code>Double</code>, <code>Character</code>, <code>Boolean</code>; boxing &amp; unboxing.</p>
+          </div>
+          <div class="card accent">
+            <h3>3. Varargs</h3>
+            <p>Variable-length argument lists — syntax, rules, and use cases.</p>
+          </div>
+          <div class="card accent">
+            <h3>4. Packages &amp; Imports</h3>
+            <p>Why packages exist, how to create them, and how imports resolve names.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>5. Access Modifiers</h3>
+            <p><code>public</code>, <code>private</code>, <code>protected</code>, and default — and why access control matters.</p>
+          </div>
+          <div class="card accent">
+            <h3>6. Debugging Fundamentals</h3>
+            <p>Compiler errors, runtime errors, logical errors, and a disciplined debugging workflow.</p>
+          </div>
+          <div class="card accent">
+            <h3>7. Object-Oriented Thinking</h3>
+            <p>Class, object, state, behaviour, identity, and methods as commands.</p>
+          </div>
+          <div class="card warn">
+            <h3>Practical Work</h3>
+            <p>Practical 1 — Class/Object declaration. Models: <em>Student</em>, <em>Book</em>, <em>BankAccount</em>. Short Core Java viva.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 3. LEARNING OBJECTIVES ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Objectives</span>
+        <h2>Learning Outcomes for Week 3</h2>
+      </header>
+      <div class="cols">
+        <div class="card">
+          <h4>Technical Skills</h4>
+          <ul>
+            <li>Choose between <code>String</code> and <code>StringBuilder</code> based on mutation needs.</li>
+            <li>Convert between primitives and wrapper objects using boxing/unboxing.</li>
+            <li>Write and call methods that accept variable-length arguments.</li>
+            <li>Organize classes into packages and use imports correctly.</li>
+            <li>Apply the four access modifiers appropriately.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Conceptual Skills</h4>
+          <ul>
+            <li>Explain why string immutability is a deliberate design choice.</li>
+            <li>Read and interpret compiler and runtime error messages.</li>
+            <li>Follow a systematic debugging workflow.</li>
+            <li>Describe a class as a blueprint and an object as an instance.</li>
+            <li>Identify state, behaviour, and identity in a real-world model.</li>
+            <li>Write a class that is <strong>not</strong> just a wrapper around <code>main()</code>.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 4. SECTION DIVIDER — STRINGS ==================== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">01</div>
+      <h1>String Handling</h1>
+      <div class="rule"></div>
+      <p>Text is everywhere. Java gives us two primary tools for it: the immutable
+      <strong>String</strong> and the mutable <strong>StringBuilder</strong>. Knowing when to use
+      which is a mark of a competent Java programmer.</p>
+    </div>
+  </section>
+
+  <!-- ==================== 5. STRING — INTRODUCTION ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">String Handling</span>
+        <h2>The <code>String</code> Class</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card">
+            <h3>What is a String?</h3>
+            <p>A <code>String</code> is an object that represents a sequence of characters.
+            It is <strong>not</strong> a primitive type — it is a reference type defined in
+            <code>java.lang</code>.</p>
+          </div>
+          <div class="card">
+            <h3>Two Ways to Create</h3>
+            <pre><span class="cmt">// 1. String literal (goes to the string pool)</span>
+String a = <span class="str">"Hello"</span>;
+
+<span class="cmt">// 2. Using the constructor (new object on the heap)</span>
+String b = <span class="kw">new</span> String(<span class="str">"Hello"</span>);</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>The String Pool</h3>
+            <p>String literals are stored in a special memory region called the
+            <strong>string pool</strong>. If two literals have the same content, they
+            point to the <em>same</em> object.</p>
+            <pre>String s1 = <span class="str">"Java"</span>;
+String s2 = <span class="str">"Java"</span>;
+System.out.println(s1 == s2); <span class="cmt">// true</span>
+
+String s3 = <span class="kw">new</span> String(<span class="str">"Java"</span>);
+System.out.println(s1 == s3); <span class="cmt">// false</span></pre>
+          </div>
+          <div class="card warn">
+            <p><strong>Key idea:</strong> <code>==</code> compares references; <code>equals()</code>
+            compares content. For strings, use <code>equals()</code>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 6. STRING IMMUTABILITY ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">String Handling</span>
+        <h2>String Immutability</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card">
+            <h3>What Does Immutable Mean?</h3>
+            <p>Once a <code>String</code> object is created, its contents cannot be changed.
+            Any operation that appears to modify a string actually creates a
+            <strong>new</strong> String object.</p>
+          </div>
+          <div class="card accent">
+            <h3>Demonstration</h3>
+            <pre>String s = <span class="str">"Hello"</span>;
+s = s + <span class="str">" World"</span>;
+System.out.println(s); <span class="cmt">// Hello World</span></pre>
+            <p class="muted">The original <code>"Hello"</code> object is untouched.
+            <code>s</code> now points to a new object <code>"Hello World"</code>.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Why Is It Designed This Way?</h3>
+            <ul>
+              <li><strong>Security:</strong> Strings are used in file paths, network connections, and class loading. Immutability prevents tampering.</li>
+              <li><strong>Caching:</strong> Hash codes can be cached because the value never changes.</li>
+              <li><strong>Thread safety:</strong> Immutable objects can be shared freely between threads.</li>
+              <li><strong>String pool:</strong> Reusing literals only works if they can't be mutated.</li>
+            </ul>
+          </div>
+          <div class="card warn">
+            <p><strong>Consequence:</strong> Concatenating inside a loop creates a new
+            object every iteration — use <code>StringBuilder</code> instead.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 7. STRING METHODS PART 1 ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">String Handling</span>
+        <h2>Common String Methods — Part 1</h2>
+      </header>
+      <table>
+        <thead>
+          <tr><th>Method</th><th>Description</th><th>Example</th><th>Result</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>length()</code></td><td>Number of characters</td><td><code>"Hello".length()</code></td><td><code>5</code></td></tr>
+          <tr><td><code>charAt(i)</code></td><td>Character at index i</td><td><code>"Hello".charAt(1)</code></td><td><code>'e'</code></td></tr>
+          <tr><td><code>substring(b)</code></td><td>From b to end</td><td><code>"Hello".substring(2)</code></td><td><code>"llo"</code></td></tr>
+          <tr><td><code>substring(b,e)</code></td><td>From b to e−1</td><td><code>"Hello".substring(1,4)</code></td><td><code>"ell"</code></td></tr>
+          <tr><td><code>indexOf(s)</code></td><td>First index of s</td><td><code>"Hello".indexOf("l")</code></td><td><code>2</code></td></tr>
+          <tr><td><code>lastIndexOf(s)</code></td><td>Last index of s</td><td><code>"Hello".lastIndexOf("l")</code></td><td><code>3</code></td></tr>
+          <tr><td><code>contains(s)</code></td><td>Does it contain s?</td><td><code>"Hello".contains("ell")</code></td><td><code>true</code></td></tr>
+          <tr><td><code>isEmpty()</code></td><td>Length is zero?</td><td><code>"".isEmpty()</code></td><td><code>true</code></td></tr>
+        </tbody>
+      </table>
+      <div class="card" style="margin-top:1.6vh">
+        <p><strong>Indexing starts at 0.</strong> A string of length <code>n</code> has valid indices
+        <code>0</code> to <code>n − 1</code>. Accessing <code>n</code> throws
+        <code>StringIndexOutOfBoundsException</code>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 8. STRING METHODS PART 2 ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">String Handling</span>
+        <h2>Common String Methods — Part 2</h2>
+      </header>
+      <div class="cols">
+        <table>
+          <thead>
+            <tr><th>Method</th><th>Result</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>toUpperCase()</code></td><td><code>"hello" → "HELLO"</code></td></tr>
+            <tr><td><code>toLowerCase()</code></td><td><code>"HELLO" → "hello"</code></td></tr>
+            <tr><td><code>trim()</code></td><td>Removes leading/trailing whitespace</td></tr>
+            <tr><td><code>replace(a,b)</code></td><td>Replace characters/strings</td></tr>
+            <tr><td><code>split(regex)</code></td><td>Returns a <code>String[]</code></td></tr>
+            <tr><td><code>startsWith(s)</code></td><td><code>boolean</code></td></tr>
+            <tr><td><code>endsWith(s)</code></td><td><code>boolean</code></td></tr>
+            <tr><td><code>equals(s)</code></td><td>Content equality</td></tr>
+            <tr><td><code>equalsIgnoreCase(s)</code></td><td>Case-insensitive equality</td></tr>
+          </tbody>
+        </table>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Example</h3>
+            <pre>String input = <span class="str">"  Java Programming  "</span>;
+
+System.out.println(input.trim());
+<span class="cmt">// "Java Programming"</span>
+
+System.out.println(input.trim().toUpperCase());
+<span class="cmt">// "JAVA PROGRAMMING"</span>
+
+String[] words = input.trim().split(<span class="str">" "</span>);
+<span class="cmt">// ["Java", "Programming"]</span></pre>
+          </div>
+          <div class="card warn">
+            <p>Methods are <strong>chainable</strong> when they return a String —
+            but each call creates a new object.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 9. STRING COMPARISON ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">String Handling</span>
+        <h2>Comparing Strings: <code>==</code> vs <code>equals()</code></h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card">
+            <h3><code>==</code> — Reference Comparison</h3>
+            <p>Checks whether two variables point to the <strong>same object</strong> in memory.</p>
+            <pre>String a = <span class="str">"Java"</span>;
+String b = <span class="str">"Java"</span>;
+String c = <span class="kw">new</span> String(<span class="str">"Java"</span>);
+
+a == b  <span class="cmt">// true  (same pool object)</span>
+a == c  <span class="cmt">// false (different objects)</span></pre>
+          </div>
+          <div class="card accent">
+            <h3><code>equals()</code> — Content Comparison</h3>
+            <p>Checks whether two strings contain the <strong>same characters</strong>.</p>
+            <pre>a.equals(b)  <span class="cmt">// true</span>
+a.equals(c)  <span class="cmt">// true</span></pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card warn">
+            <h3>Rule of Thumb</h3>
+            <p><strong>Always</strong> use <code>equals()</code> (or <code>equalsIgnoreCase()</code>)
+            to compare string content. Reserve <code>==</code> for primitives and for deliberate
+            reference-identity checks.</p>
+          </div>
+          <div class="card danger">
+            <h3>Common Bug</h3>
+            <pre><span class="kw">if</span> (userInput == <span class="str">"yes"</span>) { ... }
+<span class="cmt">// Fails when input comes from Scanner or new String()</span>
+
+<span class="cmt">// Correct:</span>
+<span class="kw">if</span> (userInput.equals(<span class="str">"yes"</span>)) { ... }</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 10. STRINGBUILDER — INTRO ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">String Handling</span>
+        <h2><code>StringBuilder</code> — Introduction</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>What Is It?</h3>
+            <p><code>StringBuilder</code> is a <strong>mutable</strong> sequence of characters.
+            Unlike <code>String</code>, its contents can be changed in place without creating
+            a new object each time.</p>
+          </div>
+          <div class="card">
+            <h3>Creating a StringBuilder</h3>
+            <pre>StringBuilder sb = <span class="kw">new</span> StringBuilder();
+StringBuilder sb2 = <span class="kw">new</span> StringBuilder(<span class="str">"Start"</span>);
+StringBuilder sb3 = <span class="kw">new</span> StringBuilder(<span class="num">50</span>); <span class="cmt">// capacity</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>Why Capacity Matters</h3>
+            <p>Default capacity is 16 characters. When exceeded, the internal array is
+            reallocated. Pre-sizing avoids repeated reallocation in hot loops.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>The Classic Loop Problem</h3>
+            <pre><span class="cmt">// BAD: creates ~n new String objects</span>
+String result = <span class="str">""</span>;
+<span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; <span class="num">1000</span>; i++) {
+    result += i;
+}
+
+<span class="cmt">// GOOD: mutates one object</span>
+StringBuilder sb = <span class="kw">new</span> StringBuilder();
+<span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; <span class="num">1000</span>; i++) {
+    sb.append(i);
+}
+String result2 = sb.toString();</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 11. STRINGBUILDER METHODS ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">String Handling</span>
+        <h2><code>StringBuilder</code> — Common Methods</h2>
+      </header>
+      <table>
+        <thead>
+          <tr><th>Method</th><th>Description</th><th>Example</th><th>Result</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>append(x)</code></td><td>Add at end</td><td><code>sb.append("Hi")</code></td><td>mutates</td></tr>
+          <tr><td><code>insert(i,x)</code></td><td>Insert at index i</td><td><code>sb.insert(0,"X")</code></td><td>mutates</td></tr>
+          <tr><td><code>delete(a,b)</code></td><td>Remove a..b−1</td><td><code>sb.delete(1,3)</code></td><td>mutates</td></tr>
+          <tr><td><code>replace(a,b,s)</code></td><td>Replace range</td><td><code>sb.replace(0,2,"AB")</code></td><td>mutates</td></tr>
+          <tr><td><code>reverse()</code></td><td>Reverse sequence</td><td><code>sb.reverse()</code></td><td>mutates</td></tr>
+          <tr><td><code>charAt(i)</code></td><td>Character at i</td><td><code>sb.charAt(0)</code></td><td>char</td></tr>
+          <tr><td><code>setCharAt(i,c)</code></td><td>Replace char</td><td><code>sb.setCharAt(0,'Z')</code></td><td>mutates</td></tr>
+          <tr><td><code>length()</code></td><td>Current length</td><td><code>sb.length()</code></td><td>int</td></tr>
+          <tr><td><code>toString()</code></td><td>Convert to String</td><td><code>sb.toString()</code></td><td>String</td></tr>
+        </tbody>
+      </table>
+      <div class="card accent" style="margin-top:1.6vh">
+        <h3>Worked Example — Reversing a String</h3>
+        <pre>StringBuilder sb = <span class="kw">new</span> StringBuilder(<span class="str">"Java"</span>);
+sb.reverse();
+System.out.println(sb.toString()); <span class="cmt">// "avaJ"</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 12. STRING VS STRINGBUILDER ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">String Handling</span>
+        <h2>String vs StringBuilder — Decision Table</h2>
+      </header>
+      <table>
+        <thead>
+          <tr><th>Aspect</th><th><code>String</code></th><th><code>StringBuilder</code></th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Mutability</td><td>Immutable</td><td>Mutable</td></tr>
+          <tr><td>Thread safety</td><td>Safe (immutable)</td><td>Not safe</td></tr>
+          <tr><td>Performance in loops</td><td>Poor — new object per change</td><td>Excellent — one object</td></tr>
+          <tr><td>Memory</td><td>May create many discarded objects</td><td>One growing buffer</td></tr>
+          <tr><td>Typical use</td><td>Constants, keys, short text</td><td>Concatenation, building output</td></tr>
+          <tr><td>Conversion</td><td><code>sb.toString()</code></td><td><code>new StringBuilder(str)</code></td></tr>
+        </tbody>
+      </table>
+      <div class="cols" style="margin-top:1.8vh">
+        <div class="card accent">
+          <h3>Use <code>String</code> When</h3>
+          <ul>
+            <li>The value does not change.</li>
+            <li>You need a stable key or constant.</li>
+            <li>Concurrency is a concern.</li>
+          </ul>
+        </div>
+        <div class="card accent">
+          <h3>Use <code>StringBuilder</code> When</h3>
+          <ul>
+            <li>Building text in a loop.</li>
+            <li>Concatenating many fragments.</li>
+            <li>Single-threaded mutation is fine.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 13. SECTION DIVIDER — WRAPPERS ==================== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">02</div>
+      <h1>Wrapper Classes</h1>
+      <div class="rule"></div>
+      <p>Primitives are fast but limited. Wrapper classes give them object identity,
+      methods, and the ability to participate in collections — at the cost of a
+      little overhead.</p>
+    </div>
+  </section>
+
+  <!-- ==================== 14. PRIMITIVE VS WRAPPER ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Wrapper Classes</span>
+        <h2>Primitive vs Wrapper Types</h2>
+      </header>
+      <div class="cols">
+        <div class="card">
+          <h4>Primitive Types</h4>
+          <ul>
+            <li>Eight types: <code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code>, <code>float</code>, <code>double</code>, <code>char</code>, <code>boolean</code>.</li>
+            <li>Store the value directly.</li>
+            <li>No methods, no <code>null</code>.</li>
+            <li>Fast and memory-efficient.</li>
+            <li>Cannot be used in generic collections.</li>
+          </ul>
+        </div>
+        <div class="card accent">
+          <h4>Wrapper Types</h4>
+          <ul>
+            <li>Classes in <code>java.lang</code>: <code>Integer</code>, <code>Double</code>, <code>Character</code>, <code>Boolean</code>, etc.</li>
+            <li>Hold a primitive value inside an object.</li>
+            <li>Provide utility methods (parsing, conversion, comparison).</li>
+            <li>Can be <code>null</code> — useful and dangerous.</li>
+            <li>Required by collections and generics.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card warn" style="margin-top:1.8vh">
+        <h3>Why Wrappers Exist</h3>
+        <p>Java's collections (<code>ArrayList</code>, <code>HashMap</code>, …) work only with objects.
+        Generics cannot be parameterized by primitives. Wrappers bridge that gap.</p>
+        <pre>ArrayList&lt;Integer&gt; scores = <span class="kw">new</span> ArrayList&lt;&gt;();
+scores.add(<span class="num">95</span>); <span class="cmt">// autoboxed to Integer</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 15. WRAPPER CLASSES OVERVIEW ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Wrapper Classes</span>
+        <h2>The Eight Wrapper Classes</h2>
+      </header>
+      <table>
+        <thead>
+          <tr><th>Primitive</th><th>Wrapper Class</th><th>Example</th><th>Useful Constants</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>byte</code></td><td><code>Byte</code></td><td><code>Byte b = 10;</code></td><td><code>Byte.MAX_VALUE</code></td></tr>
+          <tr><td><code>short</code></td><td><code>Short</code></td><td><code>Short s = 100;</code></td><td><code>Short.MIN_VALUE</code></td></tr>
+          <tr><td><code>int</code></td><td><code>Integer</code></td><td><code>Integer i = 42;</code></td><td><code>Integer.MAX_VALUE</code></td></tr>
+          <tr><td><code>long</code></td><td><code>Long</code></td><td><code>Long l = 99L;</code></td><td><code>Long.MAX_VALUE</code></td></tr>
+          <tr><td><code>float</code></td><td><code>Float</code></td><td><code>Float f = 3.14f;</code></td><td><code>Float.NaN</code></td></tr>
+          <tr><td><code>double</code></td><td><code>Double</code></td><td><code>Double d = 3.14;</code></td><td><code>Double.POSITIVE_INFINITY</code></td></tr>
+          <tr><td><code>char</code></td><td><code>Character</code></td><td><code>Character c = 'A';</code></td><td><code>Character.isLetter()</code></td></tr>
+          <tr><td><code>boolean</code></td><td><code>Boolean</code></td><td><code>Boolean flag = true;</code></td><td><code>Boolean.TRUE</code></td></tr>
+        </tbody>
+      </table>
+      <div class="card" style="margin-top:1.6vh">
+        <p>All wrapper classes are <code>final</code> and immutable — once created, the value
+        they hold cannot be changed.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 16. AUTOBOXING / UNBOXING ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Wrapper Classes</span>
+        <h2>Autoboxing and Unboxing</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Autoboxing</h3>
+            <p>Automatic conversion of a primitive to its wrapper object.</p>
+            <pre>Integer i = <span class="num">42</span>;
+<span class="cmt">// compiler inserts: Integer.valueOf(42)</span></pre>
+          </div>
+          <div class="card accent">
+            <h3>Unboxing</h3>
+            <p>Automatic conversion of a wrapper object back to a primitive.</p>
+            <pre>Integer i = <span class="num">42</span>;
+<span class="kw">int</span> x = i;
+<span class="cmt">// compiler inserts: i.intValue()</span></pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card warn">
+            <h3>NullPointerException Hazard</h3>
+            <pre>Integer count = <span class="kw">null</span>;
+<span class="kw">int</span> n = count; <span class="cmt">// NullPointerException at runtime</span></pre>
+            <p>Unboxing a <code>null</code> wrapper throws immediately. Always guard against
+            <code>null</code> when unboxing.</p>
+          </div>
+          <div class="card">
+            <h3>Equality Trap</h3>
+            <pre>Integer a = <span class="num">1000</span>;
+Integer b = <span class="num">1000</span>;
+System.out.println(a == b);      <span class="cmt">// false</span>
+System.out.println(a.equals(b)); <span class="cmt">// true</span></pre>
+            <p>Small values (−128..127) are cached, so <code>==</code> may accidentally work.
+            Do not rely on it — use <code>equals()</code>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 17. WRAPPER UTILITY METHODS ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Wrapper Classes</span>
+        <h2>Wrapper Class Utility Methods</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card">
+            <h3>Parsing Strings → Primitives</h3>
+            <pre><span class="kw">int</span> n = Integer.parseInt(<span class="str">"123"</span>);
+<span class="kw">double</span> d = Double.parseDouble(<span class="str">"3.14"</span>);
+<span class="kw">boolean</span> b = Boolean.parseBoolean(<span class="str">"true"</span>);</pre>
+            <p>Throws <code>NumberFormatException</code> if the string is not a valid number.</p>
+          </div>
+          <div class="card">
+            <h3>Converting to String</h3>
+            <pre>String s1 = Integer.toString(<span class="num">42</span>);
+String s2 = String.valueOf(<span class="num">3.14</span>);
+String s3 = <span class="str">""</span> + <span class="num">42</span>; <span class="cmt">// implicit</span></pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Comparison</h3>
+            <pre>Integer a = <span class="num">10</span>, b = <span class="num">20</span>;
+a.compareTo(b); <span class="cmt">// negative</span>
+Integer.compare(a, b); <span class="cmt">// -1</span></pre>
+          </div>
+          <div class="card accent">
+            <h3>Character Utilities</h3>
+            <pre>Character.isLetter(<span class="str">'A'</span>);   <span class="cmt">// true</span>
+Character.isDigit(<span class="str">'7'</span>);    <span class="cmt">// true</span>
+Character.isWhitespace(<span class="str">' '</span>); <span class="cmt">// true</span>
+Character.toUpperCase(<span class="str">'a'</span>); <span class="cmt">// 'A'</span></pre>
+          </div>
+          <div class="card">
+            <h3>Bounds</h3>
+            <pre>Integer.MAX_VALUE <span class="cmt">// 2147483647</span>
+Integer.MIN_VALUE <span class="cmt">// -2147483648</span>
+Double.MAX_VALUE  <span class="cmt">// 1.7976931348623157E308</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 18. SECTION DIVIDER — VARARGS ==================== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">03</div>
+      <h1>Varargs</h1>
+      <div class="rule"></div>
+      <p>Sometimes a method should accept any number of arguments. Varargs let you
+      write <code>sum(1, 2, 3, 4)</code> without overloading the method four times.</p>
+    </div>
+  </section>
+
+  <!-- ==================== 19. VARARGS SYNTAX ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Varargs</span>
+        <h2>Variable-Length Arguments — Syntax</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Syntax</h3>
+            <pre>returnType methodName(Type... name) {
+    <span class="cmt">// name is treated as Type[]</span>
+}</pre>
+            <p>The three dots <code>...</code> are the varargs operator. Inside the method,
+            the parameter behaves exactly like an array.</p>
+          </div>
+          <div class="card">
+            <h3>Simple Example</h3>
+            <pre><span class="kw">public static int</span> sum(<span class="kw">int</span>... nums) {
+    <span class="kw">int</span> total = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> n : nums) {
+        total += n;
+    }
+    <span class="kw">return</span> total;
+}
+
+sum();              <span class="cmt">// 0</span>
+sum(<span class="num">1</span>, <span class="num">2</span>);          <span class="cmt">// 3</span>
+sum(<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>); <span class="cmt">// 15</span></pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Mixing Fixed and Varargs</h3>
+            <pre><span class="kw">public static void</span> log(String level, String... messages) {
+    <span class="kw">for</span> (String m : messages) {
+        System.out.println(<span class="str">"["</span> + level + <span class="str">"] "</span> + m);
+    }
+}
+
+log(<span class="str">"INFO"</span>, <span class="str">"Started"</span>, <span class="str">"Loaded"</span>);
+log(<span class="str">"WARN"</span>); <span class="cmt">// zero varargs — valid</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>Passing an Array</h3>
+            <pre><span class="kw">int</span>[] data = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>};
+sum(data); <span class="cmt">// works — array is accepted directly</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 20. VARARGS RULES ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Varargs</span>
+        <h2>Varargs — Rules and Use Cases</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Rules</h3>
+            <ul>
+              <li>Only <strong>one</strong> varargs parameter per method.</li>
+              <li>It must be the <strong>last</strong> parameter.</li>
+              <li>It is implemented as an array — <code>nums.length</code> works.</li>
+              <li>The method can be called with zero arguments.</li>
+              <li>Overloading with varargs can create ambiguity — use with care.</li>
+            </ul>
+          </div>
+          <div class="card danger">
+            <h3>Invalid</h3>
+            <pre><span class="cmt">// Two varargs — compile error</span>
+<span class="kw">void</span> bad(<span class="kw">int</span>... a, String... b) { }
+
+<span class="cmt">// Varargs not last — compile error</span>
+<span class="kw">void</span> bad2(<span class="kw">int</span>... a, String s) { }</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Good Use Cases</h3>
+            <ul>
+              <li>Utility methods: <code>sum</code>, <code>max</code>, <code>min</code>, <code>join</code>.</li>
+              <li>Logging helpers with variable message counts.</li>
+              <li>Formatting helpers: <code>String.format(fmt, args...)</code>.</li>
+              <li>Builder-style APIs that accept optional extras.</li>
+            </ul>
+          </div>
+          <div class="card warn">
+            <h3>Avoid When</h3>
+            <ul>
+              <li>The number of arguments is fixed.</li>
+              <li>Type safety would be weakened (prefer generics).</li>
+              <li>Overload resolution becomes confusing.</li>
+            </ul>
+          </div>
+          <div class="card accent">
+            <h3>Standard Library Example</h3>
+            <pre>System.out.printf(<span class="str">"%s scored %d%n"</span>, name, score);
+<span class="cmt">// printf(String format, Object... args)</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 21. SECTION DIVIDER — PACKAGES ==================== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">04</div>
+      <h1>Packages &amp; Imports</h1>
+      <div class="rule"></div>
+      <p>As projects grow, names collide and files multiply. Packages provide
+      namespace management, access control, and a sane directory structure.</p>
+    </div>
+  </section>
+
+  <!-- ==================== 22. WHY PACKAGES ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Packages</span>
+        <h2>Why Packages Exist</h2>
+      </header>
+      <div class="cols-3">
+        <div class="card accent">
+          <h3>Organization</h3>
+          <p>Groups related classes together. A large project with 500 classes becomes
+          navigable when split into logical packages.</p>
+        </div>
+        <div class="card accent">
+          <h3>Naming Conflicts</h3>
+          <p>Two teams can both define a <code>Date</code> class if they live in different
+          packages: <code>com.a.Date</code> and <code>com.b.Date</code>.</p>
+        </div>
+        <div class="card accent">
+          <h3>Access Control</h3>
+          <p>Package-private (default) members are visible only within the same package —
+          a powerful encapsulation tool.</p>
+        </div>
+        <div class="card accent">
+          <h3>Reusability</h3>
+          <p>Packages can be compiled into JAR files and reused across projects.</p>
+        </div>
+        <div class="card accent">
+          <h3>Maintainability</h3>
+          <p>Clear boundaries make refactoring and testing easier.</p>
+        </div>
+        <div class="card accent">
+          <h3>Security</h3>
+          <p>Package boundaries interact with the class loader and security manager.</p>
+        </div>
+      </div>
+      <div class="card warn" style="margin-top:1.8vh">
+        <p><strong>Without packages:</strong> every class competes for a single global namespace.
+        With a few hundred classes, collisions become inevitable.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 23. CREATING PACKAGES ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Packages</span>
+        <h2>Creating and Using a Package</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Step 1 — Declare the Package</h3>
+            <p>The <code>package</code> statement must be the <strong>first</strong> line of the
+            source file (comments aside).</p>
+            <pre><span class="cmt">// File: com/example/shapes/Circle.java</span>
+<span class="kw">package</span> com.example.shapes;
+
+<span class="kw">public class</span> Circle {
+    <span class="kw">public double</span> area(<span class="kw">double</span> r) {
+        <span class="kw">return</span> Math.PI * r * r;
+    }
+}</pre>
+          </div>
+          <div class="card">
+            <h3>Step 2 — Match the Directory</h3>
+            <p>The folder structure must mirror the package name:</p>
+            <pre>src/
+ └── com/
+     └── example/
+         └── shapes/
+             └── Circle.java</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Step 3 — Compile</h3>
+            <pre>javac -d out src/com/example/shapes/Circle.java
+<span class="cmt"># -d out places .class files under out/com/example/shapes/</span></pre>
+          </div>
+          <div class="card">
+            <h3>Step 4 — Run</h3>
+            <pre>java -cp out com.example.shapes.Circle</pre>
+            <p>Note the fully qualified class name: <code>package.ClassName</code>.</p>
+          </div>
+          <div class="card warn">
+            <h3>Rule</h3>
+            <p>One package declaration per file. No package declaration means the class
+            lives in the <em>default package</em> — acceptable for tiny demos, bad for real code.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 24. IMPORT STATEMENTS ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Packages</span>
+        <h2>Import Statements</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Single-Class Import</h3>
+            <pre><span class="kw">import</span> java.util.Scanner;
+<span class="kw">import</span> java.util.ArrayList;</pre>
+            <p>Imports exactly one class. Preferred — makes dependencies explicit.</p>
+          </div>
+          <div class="card">
+            <h3>On-Demand (Wildcard) Import</h3>
+            <pre><span class="kw">import</span> java.util.*;</pre>
+            <p>Imports all classes in the package. Does <strong>not</strong> import sub-packages.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Static Import</h3>
+            <pre><span class="kw">import static</span> java.lang.Math.PI;
+<span class="kw">import static</span> java.lang.Math.sqrt;
+
+<span class="kw">double</span> a = PI * sqrt(<span class="num">2</span>);</pre>
+            <p>Brings static members into scope without the class prefix. Use sparingly.</p>
+          </div>
+          <div class="card warn">
+            <h3>Implicit Import</h3>
+            <p>Every compilation unit automatically imports <code>java.lang.*</code>.
+            That is why <code>String</code>, <code>System</code>, and <code>Math</code>
+            work without an import.</p>
+          </div>
+          <div class="card danger">
+            <h3>Name Collision</h3>
+            <pre><span class="kw">import</span> java.util.Date;
+<span class="kw">import</span> java.sql.Date; <span class="cmt">// compile error</span></pre>
+            <p>Resolve with fully qualified names or import only one.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 25. PACKAGE ORGANIZATION ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Packages</span>
+        <h2>Package Organization and Naming</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Naming Convention</h3>
+            <p>Use the <strong>reverse domain name</strong> to guarantee global uniqueness:</p>
+            <pre>com.company.project.module
+org.opensource.library</pre>
+            <p>All lowercase. No underscores or hyphens. Dots separate levels.</p>
+          </div>
+          <div class="card">
+            <h3>Common Layering</h3>
+            <pre>com.example.app
+├── model        <span class="cmt">// data classes</span>
+├── service      <span class="cmt">// business logic</span>
+├── repository   <span class="cmt">// persistence</span>
+├── controller   <span class="cmt">// entry points</span>
+└── util         <span class="cmt">// helpers</span></pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Build Tool Layout (Maven/Gradle)</h3>
+            <pre>src/
+ ├── main/
+ │   └── java/
+ │       └── com/example/app/...
+ └── test/
+     └── java/
+         └── com/example/app/...</pre>
+          </div>
+          <div class="card warn">
+            <h3>Practical Advice</h3>
+            <ul>
+              <li>Do not create deep hierarchies "just in case".</li>
+              <li>Prefer feature-based packages over type-based ones as projects grow.</li>
+              <li>Keep the default package empty in production code.</li>
+              <li>Package-private access is a design tool — use it intentionally.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 26. SECTION DIVIDER — ACCESS MODIFIERS ==================== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">05</div>
+      <h1>Access Modifiers</h1>
+      <div class="rule"></div>
+      <p>Encapsulation begins with a simple question: who is allowed to see and
+      change this? Java answers with four levels of access.</p>
+    </div>
+  </section>
+
+  <!-- ==================== 27. ACCESS MODIFIERS OVERVIEW ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Access Control</span>
+        <h2>The Four Access Levels</h2>
+      </header>
+      <div class="cols-3">
+        <div class="card accent">
+          <h3><code>public</code></h3>
+          <p>Visible to <strong>everyone</strong>, from any package.</p>
+          <p class="muted">Use for API entry points.</p>
+        </div>
+        <div class="card accent">
+          <h3><code>protected</code></h3>
+          <p>Visible within the package <strong>and</strong> to subclasses in other packages.</p>
+          <p class="muted">Use for inheritance-friendly members.</p>
+        </div>
+        <div class="card accent">
+          <h3><em>default</em></h3>
+          <p>No modifier. Visible only within the <strong>same package</strong>.</p>
+          <p class="muted">Package-private; a strong encapsulation tool.</p>
+        </div>
+      </div>
+      <div class="cols" style="margin-top:1.8vh">
+        <div class="card danger">
+          <h3><code>private</code></h3>
+          <p>Visible only within the <strong>same class</strong>. The most restrictive level.</p>
+          <p class="muted">Use for internal state and helper methods.</p>
+        </div>
+        <div class="card warn">
+          <h3>Where They Apply</h3>
+          <ul>
+            <li>Classes (only <code>public</code> or default)</li>
+            <li>Fields</li>
+            <li>Methods</li>
+            <li>Constructors</li>
+            <li>Nested classes and interfaces</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 28. PUBLIC AND PRIVATE ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Access Control</span>
+        <h2><code>public</code> and <code>private</code></h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3><code>public</code></h3>
+            <p>No restrictions. Accessible from any class, any package, any subclass.</p>
+            <pre><span class="kw">public class</span> Calculator {
+    <span class="kw">public int</span> add(<span class="kw">int</span> a, <span class="kw">int</span> b) {
+        <span class="kw">return</span> a + b;
+    }
+}</pre>
+            <p>Use for the contract you are offering to other code.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card danger">
+            <h3><code>private</code></h3>
+            <p>Accessible only inside the same class. Not visible to subclasses either.</p>
+            <pre><span class="kw">public class</span> BankAccount {
+    <span class="kw">private double</span> balance;
+
+    <span class="kw">public void</span> deposit(<span class="kw">double</span> amt) {
+        <span class="kw">if</span> (amt &gt; <span class="num">0</span>) balance += amt;
+    }
+
+    <span class="kw">public double</span> getBalance() {
+        <span class="kw">return</span> balance;
+    }
+}</pre>
+          </div>
+          <div class="card warn">
+            <p><strong>Principle:</strong> make fields <code>private</code> by default, expose
+            behaviour through <code>public</code> methods. This is encapsulation.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 29. PROTECTED AND DEFAULT ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Access Control</span>
+        <h2><code>protected</code> and <em>default</em></h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3><code>protected</code></h3>
+            <p>Same-package access <strong>plus</strong> access from subclasses in other packages.</p>
+            <pre><span class="kw">package</span> com.example.shapes;
+
+<span class="kw">public class</span> Shape {
+    <span class="kw">protected double</span> area;
+}
+
+<span class="cmt">// In another package:</span>
+<span class="kw">public class</span> Circle <span class="kw">extends</span> Shape {
+    <span class="kw">void</span> compute() {
+        area = <span class="num">3.14</span>; <span class="cmt">// allowed via inheritance</span>
+    }
+}</pre>
+          </div>
+          <div class="card warn">
+            <p><code>protected</code> is designed for inheritance. It is not "public but nicer".</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3><em>default</em> (Package-Private)</h3>
+            <p>No modifier written. Visible only within the same package.</p>
+            <pre><span class="kw">package</span> com.example.util;
+
+<span class="kw">class</span> InternalHelper {   <span class="cmt">// default class</span>
+    <span class="kw">void</span> run() { ... }    <span class="cmt">// default method</span>
+}</pre>
+            <p>Useful for internal collaboration without exposing a public API.</p>
+          </div>
+          <div class="card accent">
+            <h3>Practical Guidance</h3>
+            <ul>
+              <li>Start with the most restrictive level that works.</li>
+              <li>Widen only when a real need appears.</li>
+              <li>Most fields: <code>private</code>.</li>
+              <li>Most public API methods: <code>public</code>.</li>
+              <li>Inheritance hooks: <code>protected</code>.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 30. ACCESS COMPARISON TABLE ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Access Control</span>
+        <h2>Access Control — Full Comparison</h2>
+      </header>
+      <table>
+        <thead>
+          <tr>
+            <th>Modifier</th>
+            <th>Same Class</th>
+            <th>Same Package</th>
+            <th>Subclass (other package)</th>
+            <th>Anywhere</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>public</code></td><td>Yes</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+          <tr><td><code>protected</code></td><td>Yes</td><td>Yes</td><td>Yes</td><td>No</td></tr>
+          <tr><td><em>default</em></td><td>Yes</td><td>Yes</td><td>No</td><td>No</td></tr>
+          <tr><td><code>private</code></td><td>Yes</td><td>No</td><td>No</td><td>No</td></tr>
+        </tbody>
+      </table>
+      <div class="cols" style="margin-top:2vh">
+        <div class="card accent">
+          <h3>Why Access Control Matters</h3>
+          <ul>
+            <li><strong>Encapsulation:</strong> hides internal representation.</li>
+            <li><strong>Invariants:</strong> prevents invalid state changes.</li>
+            <li><strong>Evolvability:</strong> internal changes don't break clients.</li>
+            <li><strong>Security:</strong> limits the attack surface.</li>
+            <li><strong>Clarity:</strong> communicates design intent.</li>
+          </ul>
+        </div>
+        <div class="card warn">
+          <h3>Rule of Thumb</h3>
+          <p>Design classes as if every member will be read by a stranger. Expose the
+          minimum surface necessary. The narrower the access, the freer you are to
+          change the implementation later.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 31. SECTION DIVIDER — DEBUGGING ==================== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">06</div>
+      <h1>Debugging Fundamentals</h1>
+      <div class="rule"></div>
+      <p>Errors are not failures. They are information. A disciplined debugging
+      workflow turns a cryptic message into a specific fix.</p>
+    </div>
+  </section>
+
+  <!-- ==================== 32. TYPES OF ERRORS ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Debugging</span>
+        <h2>Three Categories of Errors</h2>
+      </header>
+      <div class="cols-3">
+        <div class="card danger">
+          <h3>Compile-Time Errors</h3>
+          <p>Detected by <code>javac</code>. The program does not compile.</p>
+          <pre>int x = <span class="str">"hello"</span>;
+<span class="cmt">// incompatible types</span></pre>
+          <ul>
+            <li>Syntax errors</li>
+            <li>Type mismatches</li>
+            <li>Missing imports</li>
+            <li>Undeclared variables</li>
+          </ul>
+        </div>
+        <div class="card warn">
+          <h3>Runtime Errors</h3>
+          <p>Occur while the program is running. Throw an exception.</p>
+          <pre><span class="kw">int</span> x = <span class="num">10</span> / <span class="num">0</span>;
+<span class="cmt">// ArithmeticException</span></pre>
+          <ul>
+            <li><code>NullPointerException</code></li>
+            <li><code>ArrayIndexOutOfBoundsException</code></li>
+            <li><code>NumberFormatException</code></li>
+            <li><code>InputMismatchException</code></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Logical Errors</h3>
+          <p>The program compiles and runs, but produces the wrong result.</p>
+          <pre><span class="cmt">// Intended: average of two numbers</span>
+<span class="kw">double</span> avg = a + b / <span class="num">2</span>;
+<span class="cmt">// Precedence bug — should be (a + b) / 2</span></pre>
+          <ul>
+            <li>Wrong operator precedence</li>
+            <li>Off-by-one in loops</li>
+            <li>Wrong variable used</li>
+            <li>Misunderstood requirements</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card accent" style="margin-top:1.8vh">
+        <p>Compile-time errors are the easiest to fix because the compiler tells you
+        the file and line. Logical errors are the hardest because nothing complains —
+        you must reason about intent.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 33. DEBUGGING WORKFLOW ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Debugging</span>
+        <h2>A Disciplined Debugging Workflow</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Step 1 — Read the Message Carefully</h3>
+            <p>The compiler or JVM gives you a file name, a line number, and a specific
+            complaint. Read it before changing anything.</p>
+            <div class="term">
+              <div><span class="err">Main.java:7: error:</span> incompatible types</div>
+              <div class="out">&nbsp;&nbsp;int x = "hello";</div>
+              <div class="out">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;^</div>
+              <div class="out">&nbsp;&nbsp;required: int&nbsp;&nbsp;found: String</div>
+            </div>
+          </div>
+          <div class="card accent">
+            <h3>Step 2 — Locate the Exact Line</h3>
+            <p>Go to the reported line. If the error mentions a symbol, search for where
+            it is declared and where it is used.</p>
+          </div>
+          <div class="card accent">
+            <h3>Step 3 — Form a Hypothesis</h3>
+            <p>State in one sentence what you believe is wrong. This prevents random
+            edits and shotgun debugging.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Step 4 — Test the Hypothesis</h3>
+            <p>Add a print statement, simplify the code, or comment out sections. Confirm
+            or reject your belief before fixing.</p>
+            <pre>System.out.println(<span class="str">"x = "</span> + x);
+System.out.println(<span class="str">"arr length = "</span> + arr.length);</pre>
+          </div>
+          <div class="card accent">
+            <h3>Step 5 — Fix and Re-run</h3>
+            <p>Change one thing at a time. Re-run the program. If the symptom persists,
+            your hypothesis was incomplete — return to Step 1.</p>
+          </div>
+          <div class="card warn">
+            <h3>Step 6 — Document and Prevent</h3>
+            <p>Add a test, a comment, or a validation check so the same class of bug
+            cannot silently return.</p>
+          </div>
+          <div class="card">
+            <h3>Tools</h3>
+            <p>Print statements, IDE debugger with breakpoints, stack traces,
+            assertions, and unit tests.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 34. SECTION DIVIDER — OOP THINKING ==================== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">07</div>
+      <h1>Object-Oriented Thinking</h1>
+      <div class="rule"></div>
+      <p>The bridge. Everything so far has lived inside <code>main()</code>. Now we
+      move behaviour and data into classes that model the problem domain.</p>
+    </div>
+  </section>
+
+  <!-- ==================== 35. WHAT IS A CLASS ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">OOP Thinking</span>
+        <h2>What Is a Class?</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>A class is a <strong>blueprint</strong> or <strong>template</strong> that defines
+            the structure and behaviour of a category of objects. It specifies what
+            data an object will hold and what operations it can perform.</p>
+          </div>
+          <div class="card">
+            <h3>Anatomy of a Class</h3>
+            <pre><span class="kw">public class</span> Student {
+
+    <span class="cmt">// Fields (state)</span>
+    String name;
+    <span class="kw">int</span> rollNo;
+
+    <span class="cmt">// Method (behaviour)</span>
+    <span class="kw">void</span> display() {
+        System.out.println(name + <span class="str">" - "</span> + rollNo);
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card warn">
+            <h3>Class vs File</h3>
+            <ul>
+              <li>A file may contain multiple classes.</li>
+              <li>Only one may be <code>public</code>, and it must match the file name.</li>
+              <li>Classes are reference types — variables hold references, not values.</li>
+            </ul>
+          </div>
+          <div class="card accent">
+            <h3>Why This Beats a Single <code>main()</code></h3>
+            <ul>
+              <li>State is grouped with the behaviour that operates on it.</li>
+              <li>Multiple students can exist independently.</li>
+              <li>Code becomes reusable and testable.</li>
+              <li>The design mirrors the real-world domain.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 36. WHAT IS AN OBJECT ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">OOP Thinking</span>
+        <h2>What Is an Object?</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>An object is a specific <strong>instance</strong> of a class — a concrete
+            entity created in memory with its own copy of the class's fields.</p>
+          </div>
+          <div class="card">
+            <h3>Creating an Object</h3>
+            <pre>Student s1 = <span class="kw">new</span> Student();
+s1.name = <span class="str">"Alice"</span>;
+s1.rollNo = <span class="num">101</span>;
+
+Student s2 = <span class="kw">new</span> Student();
+s2.name = <span class="str">"Bob"</span>;
+s2.rollNo = <span class="num">102</span>;
+
+s1.display(); <span class="cmt">// Alice - 101</span>
+s2.display(); <span class="cmt">// Bob - 102</span></pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>What Happens at <code>new</code></h3>
+            <ol>
+              <li>Memory is allocated on the heap.</li>
+              <li>Fields are initialized to defaults.</li>
+              <li>The constructor runs.</li>
+              <li>A reference to the object is returned.</li>
+            </ol>
+          </div>
+          <div class="card warn">
+            <h3>Reference Semantics</h3>
+            <pre>Student a = <span class="kw">new</span> Student();
+Student b = a;       <span class="cmt">// b points to same object</span>
+b.name = <span class="str">"Zara"</span>;
+System.out.println(a.name); <span class="cmt">// Zara</span></pre>
+            <p>Both variables reference the same object. Changing through one is visible
+            through the other.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 37. STATE, BEHAVIOUR, IDENTITY ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">OOP Thinking</span>
+        <h2>State, Behaviour, Identity</h2>
+      </header>
+      <div class="cols-3">
+        <div class="card accent">
+          <h3>State</h3>
+          <p>The data an object holds — its fields. State changes over the object's
+          lifetime.</p>
+          <pre>String name;
+<span class="kw">int</span> rollNo;
+<span class="kw">double</span> gpa;</pre>
+          <p class="muted">"What does this object know?"</p>
+        </div>
+        <div class="card accent">
+          <h3>Behaviour</h3>
+          <p>The methods an object exposes — what it can do or what can be done to it.</p>
+          <pre><span class="kw">void</span> display() { ... }
+<span class="kw">void</span> promote() { ... }
+<span class="kw">double</span> average() { ... }</pre>
+          <p class="muted">"What can this object do?"</p>
+        </div>
+        <div class="card accent">
+          <h3>Identity</h3>
+          <p>What distinguishes one object from another, even if their state is
+          identical. In Java, identity is the object's reference.</p>
+          <pre>Student a = <span class="kw">new</span> Student();
+Student b = <span class="kw">new</span> Student();
+a == b <span class="cmt">// false (different identities)</span></pre>
+          <p class="muted">"Which object is this?"</p>
+        </div>
+      </div>
+      <div class="card warn" style="margin-top:1.8vh">
+        <h3>Worked Example</h3>
+        <p>Two students may share the same name and roll number in a hypothetical dataset,
+        but they are still distinct objects. Identity is not the same as equality of state.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 38. METHODS AS COMMANDS ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">OOP Thinking</span>
+        <h2>Methods as Commands / Actions</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Procedural View</h3>
+            <p>In procedural code, functions are the centre of gravity. Data is passed
+            in, transformed, and returned.</p>
+            <pre><span class="kw">double</span> balance = <span class="num">1000</span>;
+balance = deposit(balance, <span class="num">500</span>);
+
+<span class="kw">double</span> deposit(<span class="kw">double</span> bal, <span class="kw">double</span> amt) {
+    <span class="kw">return</span> bal + amt;
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Object-Oriented View</h3>
+            <p>In OOP, the object is the centre of gravity. Methods are commands sent to
+            the object, and the object is responsible for its own state.</p>
+            <pre>BankAccount acc = <span class="kw">new</span> BankAccount(<span class="num">1000</span>);
+acc.deposit(<span class="num">500</span>);
+acc.withdraw(<span class="num">200</span>);
+System.out.println(acc.getBalance()); <span class="cmt">// 1300</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>The Shift in Thinking</h3>
+            <p>Instead of asking "what function do I call?", ask "which object should
+            handle this, and what message do I send it?" This is the essence of
+            object-oriented design.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 39. PRACTICAL MODELS ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Practical 1</span>
+        <h2>Class / Object Declaration — Student, Book, BankAccount</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Student</h3>
+            <pre><span class="kw">public class</span> Student {
+    String name;
+    <span class="kw">int</span> rollNo;
+
+    <span class="kw">void</span> display() {
+        System.out.println(name + <span class="str">" - "</span> + rollNo);
+    }
+}</pre>
+            <p class="muted">State: <code>name</code>, <code>rollNo</code>. Behaviour: <code>display()</code>.</p>
+          </div>
+          <div class="card accent">
+            <h3>Book</h3>
+            <pre><span class="kw">public class</span> Book {
+    String title;
+    String author;
+    <span class="kw">double</span> price;
+
+    <span class="kw">void</span> printDetails() {
+        System.out.println(title + <span class="str">" by "</span> + author
+            + <span class="str">" — Rs."</span> + price);
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>BankAccount</h3>
+            <pre><span class="kw">public class</span> BankAccount {
+    <span class="kw">private double</span> balance;
+
+    <span class="kw">public void</span> deposit(<span class="kw">double</span> amt) {
+        <span class="kw">if</span> (amt &gt; <span class="num">0</span>) balance += amt;
+    }
+
+    <span class="kw">public void</span> withdraw(<span class="kw">double</span> amt) {
+        <span class="kw">if</span> (amt &gt; <span class="num">0</span> &amp;&amp; amt &lt;= balance) {
+            balance -= amt;
+        }
+    }
+
+    <span class="kw">public double</span> getBalance() {
+        <span class="kw">return</span> balance;
+    }
+}</pre>
+          </div>
+          <div class="card warn">
+            <h3>Viva Point</h3>
+            <p>Be ready to explain why <code>balance</code> is <code>private</code> and why
+            <code>deposit</code> validates its input. This is encapsulation in practice.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 40. SUMMARY ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Wrap-Up</span>
+        <h2>Summary and Checklist</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Key Takeaways</h3>
+            <ul>
+              <li><code>String</code> is immutable; <code>StringBuilder</code> is mutable.</li>
+              <li>Use <code>equals()</code> for string content, <code>==</code> for references.</li>
+              <li>Wrapper classes let primitives participate in collections.</li>
+              <li>Autoboxing/unboxing is convenient but has a <code>null</code> hazard.</li>
+              <li>Varargs allow variable-length argument lists — one per method, last position.</li>
+              <li>Packages organize code and prevent naming collisions.</li>
+              <li>Access modifiers implement encapsulation.</li>
+              <li>Debugging is a hypothesis-driven process, not guesswork.</li>
+              <li>A class is a blueprint; an object is an instance.</li>
+              <li>State, behaviour, and identity define an object.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card warn">
+            <h3>Before Next Week, Ensure You Can</h3>
+            <ul>
+              <li>Write a class with fields, methods, and a <code>display()</code> method.</li>
+              <li>Create and use multiple objects independently.</li>
+              <li>Explain why <code>main()</code> alone is not object-oriented design.</li>
+              <li>Apply <code>private</code> fields with <code>public</code> accessors.</li>
+              <li>Read a compiler error and locate the offending line.</li>
+              <li>Choose between <code>String</code> and <code>StringBuilder</code> deliberately.</li>
+              <li>Convert between primitives and wrappers safely.</li>
+              <li>Organize classes into packages with sensible names.</li>
+            </ul>
+          </div>
+          <div class="card accent">
+            <h3>Next Week</h3>
+            <p>Classes, Objects &amp; Constructors — properties, methods, constructors,
+            access modifiers, instance/static members, <code>this</code>, <code>final</code>,
+            and the <code>String</code> class in depth.</p>
+          </div>
+          <div class="card">
+            <p class="blink green" style="font-size:1.05em">End of Week 3 — Core Java → OOP Bridge</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="hud">
+  <span class="brand">5th Sem · Week 3 · Core Java → OOP Bridge</span>
+  <span class="counter"><span id="cur">1</span> / <span id="total">40</span></span>
+</div>
+
+<div class="nav">
+  <button id="prev" title="Previous (←)">&#8249;</button>
+  <button id="next" title="Next (→)">&#8250;</button>
+</div>
+
+<div class="progress"><i id="bar"></i></div>
+
+<script>
+/* ---------------- Matrix rain ---------------- */
+(function () {
+  const canvas = document.getElementById('matrix');
+  const ctx = canvas.getContext('2d');
+  let cols, drops, fontSize = 14;
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    cols = Math.floor(canvas.width / fontSize);
+    drops = new Array(cols).fill(1);
+    ctx.font = fontSize + 'px monospace';
+  }
+
+  const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+  function draw() {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#00ff41';
+    ctx.font = fontSize + 'px monospace';
+    for (let i = 0; i < drops.length; i++) {
+      const text = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+        drops[i] = 0;
+      }
+      drops[i]++;
+    }
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  setInterval(draw, 55);
+})();
+
+/* ---------------- Slide navigation ---------------- */
+(function () {
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  const curEl = document.getElementById('cur');
+  const totalEl = document.getElementById('total');
+  const bar = document.getElementById('bar');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  let index = 0;
+
+  totalEl.textContent = total;
+
+  function render() {
+    slides.forEach((s, i) => s.classList.toggle('active', i === index));
+    curEl.textContent = index + 1;
+    bar.style.width = ((index + 1) / total * 100) + '%';
+    prevBtn.disabled = index === 0;
+    nextBtn.disabled = index === total - 1;
+    const active = slides[index];
+    if (active) active.scrollTop = 0;
+  }
+
+  function go(delta) {
+    const next = index + delta;
+    if (next < 0 || next >= total) return;
+    index = next;
+    render();
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault();
+      go(1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      go(-1);
+    } else if (e.key === 'Home') {
+      index = 0; render();
+    } else if (e.key === 'End') {
+      index = total - 1; render();
+    }
+  });
+
+  prevBtn.addEventListener('click', () => go(-1));
+  nextBtn.addEventListener('click', () => go(1));
+
+  /* Click on the deck background (not on links/buttons) to advance */
+  document.getElementById('deck').addEventListener('click', (e) => {
+    if (e.target.closest('a, button, pre, code, table')) return;
+    go(1);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

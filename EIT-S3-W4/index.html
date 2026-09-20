@@ -1,0 +1,2568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 4 — Inheritance | 3rd Semester</title>
+<style>
+  :root {
+    --green: #00ff41;
+    --green-bright: #7dffa0;
+    --green-mid: #00c832;
+    --green-dim: #008f11;
+    --green-dark: #003b00;
+    --bg: #000000;
+    --panel: #060d06;
+    --panel-2: #0a140a;
+    --text: #c9f5c9;
+    --text-dim: #7fae7f;
+    --border: rgba(0, 255, 65, 0.25);
+    --border-soft: rgba(0, 255, 65, 0.12);
+    --amber: #ffb000;
+    --red: #ff3b3b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Consolas", "Courier New", "SF Mono", monospace;
+    overflow: hidden;
+  }
+
+  #matrix {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.18;
+    pointer-events: none;
+  }
+
+  .deck {
+    position: relative;
+    z-index: 1;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+    padding: 3.2vh 4vw 7vh 4vw;
+    overflow-y: auto;
+    overflow-x: hidden;
+    animation: fadeUp 0.35s ease-out;
+  }
+
+  .slide.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .slide::-webkit-scrollbar { width: 8px; }
+  .slide::-webkit-scrollbar-track { background: transparent; }
+  .slide::-webkit-scrollbar-thumb {
+    background: var(--green-dark);
+    border-radius: 4px;
+  }
+
+  .slide-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  .slide-head {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1.4vh;
+    margin-bottom: 2.4vh;
+  }
+
+  .slide-tag {
+    display: inline-block;
+    font-size: clamp(10px, 0.85vw, 13px);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--green-mid);
+    border: 1px solid var(--border);
+    padding: 3px 10px;
+    border-radius: 3px;
+    margin-bottom: 1vh;
+    background: rgba(0, 255, 65, 0.05);
+  }
+
+  h1 {
+    font-size: clamp(26px, 3.6vw, 52px);
+    color: var(--green);
+    text-shadow: 0 0 14px rgba(0, 255, 65, 0.55);
+    letter-spacing: 0.02em;
+    line-height: 1.15;
+  }
+
+  h2 {
+    font-size: clamp(20px, 2.4vw, 34px);
+    color: var(--green);
+    text-shadow: 0 0 10px rgba(0, 255, 65, 0.4);
+    letter-spacing: 0.01em;
+  }
+
+  h3 {
+    font-size: clamp(15px, 1.35vw, 21px);
+    color: var(--green-bright);
+    margin-bottom: 1vh;
+    letter-spacing: 0.02em;
+  }
+
+  h4 {
+    font-size: clamp(13px, 1.1vw, 17px);
+    color: var(--green-mid);
+    margin-bottom: 0.8vh;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  p, li {
+    font-size: clamp(13px, 1.05vw, 17px);
+    line-height: 1.65;
+    color: var(--text);
+  }
+
+  ul, ol { padding-left: 1.4em; }
+  li { margin-bottom: 0.55vh; }
+  li::marker { color: var(--green-mid); }
+
+  strong { color: var(--green-bright); font-weight: 600; }
+  em { color: var(--amber); font-style: normal; }
+
+  .cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.2vw;
+  }
+  .cols-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.6vw;
+  }
+  .stack > * + * { margin-top: 1.6vh; }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--green-dim);
+    border-radius: 4px;
+    padding: 1.6vh 1.4vw;
+  }
+  .card.accent { border-left-color: var(--green); box-shadow: 0 0 18px rgba(0,255,65,0.08); }
+  .card.warn { border-left-color: var(--amber); }
+  .card.danger { border-left-color: var(--red); }
+
+  .card h3 { margin-bottom: 0.8vh; }
+
+  pre {
+    background: #030803;
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--green-mid);
+    border-radius: 4px;
+    padding: 1.2vh 1vw;
+    overflow-x: auto;
+    font-size: clamp(11px, 0.92vw, 15px);
+    line-height: 1.55;
+    color: var(--green-bright);
+    white-space: pre;
+  }
+  pre .kw  { color: #66d9ff; }
+  pre .str { color: #ffd479; }
+  pre .cmt { color: #4d7a4d; font-style: italic; }
+  pre .num { color: #ff9d5c; }
+  pre .cls { color: #7dffa0; }
+
+  code {
+    font-family: inherit;
+    background: rgba(0, 255, 65, 0.08);
+    border: 1px solid var(--border-soft);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--green-bright);
+    font-size: 0.95em;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: clamp(11px, 0.95vw, 15px);
+    margin-top: 0.6vh;
+  }
+  th, td {
+    border: 1px solid var(--border-soft);
+    padding: 0.7vh 0.8vw;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: rgba(0, 255, 65, 0.10);
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.85em;
+  }
+  td { color: var(--text); }
+  tr:nth-child(even) td { background: rgba(0, 255, 65, 0.025); }
+
+  .section-slide .slide-inner {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .section-slide .num {
+    font-size: clamp(70px, 10vw, 160px);
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--green-dim);
+    line-height: 1;
+    margin-bottom: 1vh;
+    letter-spacing: 0.02em;
+  }
+  .section-slide h1 {
+    font-size: clamp(34px, 5vw, 72px);
+  }
+  .section-slide .rule {
+    width: 120px;
+    height: 3px;
+    background: var(--green);
+    margin: 2.2vh 0;
+    box-shadow: 0 0 14px var(--green);
+  }
+  .section-slide p {
+    color: var(--text-dim);
+    max-width: 760px;
+    font-size: clamp(14px, 1.15vw, 19px);
+  }
+
+  .title-slide .slide-inner {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .title-slide .kicker {
+    color: var(--green-mid);
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    font-size: clamp(11px, 0.9vw, 14px);
+    margin-bottom: 2vh;
+  }
+  .title-slide h1 {
+    font-size: clamp(34px, 5.2vw, 76px);
+    line-height: 1.05;
+    margin-bottom: 1.6vh;
+  }
+  .title-slide .sub {
+    color: var(--text-dim);
+    font-size: clamp(14px, 1.2vw, 20px);
+    max-width: 900px;
+    line-height: 1.6;
+  }
+  .title-slide .meta {
+    margin-top: 4vh;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .chip {
+    border: 1px solid var(--border);
+    background: rgba(0, 255, 65, 0.05);
+    color: var(--green-bright);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: clamp(11px, 0.9vw, 14px);
+    letter-spacing: 0.06em;
+  }
+
+  .hud {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 22px;
+    background: linear-gradient(to top, rgba(0,0,0,0.92), rgba(0,0,0,0));
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    pointer-events: none;
+  }
+  .hud .counter { color: var(--green); }
+  .hud .brand { color: var(--green-dim); text-transform: uppercase; }
+
+  .nav {
+    position: fixed;
+    right: 22px;
+    bottom: 42px;
+    z-index: 6;
+    display: flex;
+    gap: 10px;
+  }
+  .nav button {
+    width: 42px; height: 42px;
+    background: rgba(0, 20, 0, 0.7);
+    border: 1px solid var(--border);
+    color: var(--green);
+    font-family: inherit;
+    font-size: 18px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    display: grid;
+    place-items: center;
+  }
+  .nav button:hover {
+    background: rgba(0, 255, 65, 0.12);
+    box-shadow: 0 0 14px rgba(0, 255, 65, 0.35);
+  }
+  .nav button:disabled { opacity: 0.25; cursor: not-allowed; }
+
+  .progress {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: 3px;
+    background: rgba(0, 255, 65, 0.08);
+    z-index: 7;
+  }
+  .progress > i {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: var(--green);
+    box-shadow: 0 0 10px var(--green);
+    transition: width 0.25s ease;
+  }
+
+  .pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    border: 1px solid var(--border);
+    color: var(--green-bright);
+    background: rgba(0,255,65,0.06);
+    letter-spacing: 0.06em;
+  }
+  .muted { color: var(--text-dim); }
+  .green { color: var(--green); }
+  .amber { color: var(--amber); }
+  .red { color: var(--red); }
+
+  .blink::after {
+    content: "_";
+    animation: blink 1s steps(2, start) infinite;
+    color: var(--green);
+  }
+  @keyframes blink { to { visibility: hidden; } }
+
+  .term {
+    background: #030803;
+    border: 1px solid var(--border-soft);
+    border-radius: 4px;
+    padding: 1.2vh 1vw;
+    font-size: clamp(11px, 0.92vw, 15px);
+    line-height: 1.55;
+  }
+  .term .prompt { color: var(--green-mid); }
+  .term .out { color: var(--text-dim); }
+  .term .err { color: var(--red); }
+
+  @media (max-width: 900px) {
+    .cols, .cols-3 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="matrix"></canvas>
+
+<div class="deck" id="deck">
+
+  <!-- ==================== 1. TITLE ==================== -->
+  <section class="slide title-slide active">
+    <div class="slide-inner">
+      <div class="kicker">3rd Semester &nbsp;|&nbsp; Week 4 &nbsp;|&nbsp; 21–27 September 2026</div>
+      <h1>Inheritance</h1>
+      <p class="sub">
+        Unit II. One of the four pillars of object-oriented programming. Inheritance
+        lets a class acquire the fields and methods of another class, enabling code
+        reuse, hierarchy modelling, and polymorphism. This week also covers the
+        <code>super</code> keyword, method overriding, covariant return types,
+        abstract classes, interfaces, and packages.
+      </p>
+      <div class="meta">
+        <span class="chip">Inheritance Types</span>
+        <span class="chip">super</span>
+        <span class="chip">Method Overriding</span>
+        <span class="chip">Covariant Return Types</span>
+        <span class="chip">Abstract Classes</span>
+        <span class="chip">Interfaces</span>
+        <span class="chip">Packages</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 2. WEEK OVERVIEW ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Overview</span>
+        <h2>What This Week Covers</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>1. Inheritance Types</h3>
+            <p>Single, multilevel, hierarchical, multiple, and hybrid inheritance. What Java supports and why.</p>
+          </div>
+          <div class="card accent">
+            <h3>2. The <code>super</code> Keyword</h3>
+            <p>Calling superclass constructors, methods, and accessing superclass fields.</p>
+          </div>
+          <div class="card accent">
+            <h3>3. Method Overriding</h3>
+            <p>Rules, <code>@Override</code>, overriding <code>toString()</code>, <code>equals()</code>, and <code>hashCode()</code>.</p>
+          </div>
+          <div class="card accent">
+            <h3>4. Covariant Return Types</h3>
+            <p>Overriding method returns a subtype of the parent's return type.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>5. Abstract Classes</h3>
+            <p>Cannot be instantiated; can contain abstract and concrete methods; share state.</p>
+          </div>
+          <div class="card accent">
+            <h3>6. Interfaces</h3>
+            <p>Define capability contracts. Multiple inheritance of type. Default, static, and private methods.</p>
+          </div>
+          <div class="card accent">
+            <h3>7. Packages</h3>
+            <p>Organize classes, prevent naming conflicts, enable access control across packages.</p>
+          </div>
+          <div class="card warn">
+            <h3>Practical Work</h3>
+            <p>Single, multilevel, and hierarchical inheritance. Interface-based inheritance. Package creation. Abstract class and interface exercises.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 3. LEARNING OBJECTIVES ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Objectives</span>
+        <h2>Learning Outcomes for Week 4</h2>
+      </header>
+      <div class="cols">
+        <div class="card">
+          <h4>Technical Skills</h4>
+          <ul>
+            <li>Implement single, multilevel, and hierarchical inheritance.</li>
+            <li>Use <code>super</code> to call superclass constructors, methods, and fields.</li>
+            <li>Override methods correctly with <code>@Override</code>.</li>
+            <li>Override <code>toString()</code>, <code>equals()</code>, and <code>hashCode()</code>.</li>
+            <li>Define and use covariant return types.</li>
+            <li>Design abstract classes with abstract and concrete methods.</li>
+            <li>Define interfaces and implement them in classes.</li>
+            <li>Create packages and use imports.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Conceptual Skills</h4>
+          <ul>
+            <li>Explain the "is-a" relationship and when inheritance is appropriate.</li>
+            <li>Explain why Java does not support multiple inheritance through classes.</li>
+            <li>Distinguish overriding from overloading.</li>
+            <li>Distinguish abstract classes from interfaces.</li>
+            <li>Reason about access modifiers in inheritance across packages.</li>
+            <li>Choose between inheritance and composition.</li>
+            <li>Model a class hierarchy for a real-world domain.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 4. SECTION DIVIDER — INHERITANCE FUNDAMENTALS ==================== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">01</div>
+      <h1>Inheritance Fundamentals</h1>
+      <div class="rule"></div>
+      <p>Inheritance allows one class to acquire the properties and behaviours of
+      another. It models natural "is-a" relationships and enables code reuse
+      without duplication.</p>
+    </div>
+  </section>
+
+  <!-- ==================== 5. WHAT IS INHERITANCE ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Inheritance</span>
+        <h2>What Is Inheritance?</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>Inheritance is a mechanism by which one class (the <strong>subclass</strong> or
+            child class) acquires the fields and methods of another class (the
+            <strong>superclass</strong> or parent class).</p>
+          </div>
+          <div class="card">
+            <h3>What the Subclass Inherits</h3>
+            <ul>
+              <li>Fields (subject to access modifiers).</li>
+              <li>Methods (subject to access modifiers).</li>
+              <li>Nested classes.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>What the Subclass Can Do</h3>
+            <ul>
+              <li>Add new fields and methods.</li>
+              <li>Override inherited methods to change behaviour.</li>
+              <li>Use <code>super</code> to invoke parent behaviour.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>The Keyword <code>extends</code></h3>
+            <pre><span class="kw">class</span> Superclass {
+    <span class="cmt">// fields and methods</span>
+}
+
+<span class="kw">class</span> Subclass <span class="kw">extends</span> Superclass {
+    <span class="cmt">// additional fields and methods</span>
+}</pre>
+          </div>
+          <div class="card warn">
+            <h3>Terminology</h3>
+            <table>
+              <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+              <tbody>
+                <tr><td>Superclass</td><td>Parent, base class</td></tr>
+                <tr><td>Subclass</td><td>Child, derived class</td></tr>
+                <tr><td>extends</td><td>Keyword establishing inheritance</td></tr>
+                <tr><td>is-a</td><td>The relationship modelled</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 6. IS-A RELATIONSHIP AND WHY INHERIT ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Inheritance</span>
+        <h2>The "Is-A" Relationship and Why Inherit</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>The "Is-A" Test</h3>
+            <p>Inheritance models an <strong>is-a</strong> relationship. If you can say
+            "X is a Y", inheritance may be appropriate.</p>
+            <ul>
+              <li>A <code>Car</code> <strong>is a</strong> <code>Vehicle</code>.</li>
+              <li>A <code>SavingsAccount</code> <strong>is a</strong> <code>BankAccount</code>.</li>
+              <li>A <code>Dog</code> <strong>is an</strong> <code>Animal</code>.</li>
+            </ul>
+          </div>
+          <div class="card danger">
+            <h3>Counter-Example</h3>
+            <p>A <code>Car</code> <strong>has an</strong> <code>Engine</code>. This is a
+            <strong>has-a</strong> relationship, which calls for composition, not
+            inheritance.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Why Use Inheritance?</h3>
+            <table>
+              <thead><tr><th>Reason</th><th>Explanation</th></tr></thead>
+              <tbody>
+                <tr><td>Code reuse</td><td>Common members defined once in the parent.</td></tr>
+                <tr><td>Hierarchy modelling</td><td>Natural "is-a" relationships.</td></tr>
+                <tr><td>Polymorphism</td><td>Enables dynamic method dispatch.</td></tr>
+                <tr><td>Extensibility</td><td>New subclasses without modifying existing code.</td></tr>
+                <tr><td>Maintainability</td><td>Changes to shared behaviour in one place.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 7. SYNTAX AND FIRST EXAMPLE ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Inheritance</span>
+        <h2>Syntax and First Example</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Animal.java</h3>
+            <pre><span class="kw">class</span> Animal {
+    String name;
+
+    <span class="kw">void</span> eat() {
+        System.out.println(name + <span class="str">" is eating."</span>);
+    }
+
+    <span class="kw">void</span> sleep() {
+        System.out.println(name + <span class="str">" is sleeping."</span>);
+    }
+}</pre>
+          </div>
+          <div class="card accent">
+            <h3>Dog.java</h3>
+            <pre><span class="kw">class</span> Dog <span class="kw">extends</span> Animal {
+    <span class="kw">void</span> bark() {
+        System.out.println(name + <span class="str">" is barking."</span>);
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Main.java</h3>
+            <pre><span class="kw">public class</span> Main {
+    <span class="kw">public static void</span> main(String[] args) {
+        Dog d = <span class="kw">new</span> Dog();
+        d.name = <span class="str">"Rex"</span>;
+
+        d.eat();    <span class="cmt">// inherited</span>
+        d.sleep();  <span class="cmt">// inherited</span>
+        d.bark();   <span class="cmt">// defined in Dog</span>
+    }
+}</pre>
+          </div>
+          <div class="card warn">
+            <h3>Output</h3>
+            <div class="term">
+              <div class="out">Rex is eating.</div>
+              <div class="out">Rex is sleeping.</div>
+              <div class="out">Rex is barking.</div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Key Observation</h3>
+            <p><code>Dog</code> did not declare <code>name</code>, <code>eat()</code>, or
+            <code>sleep()</code>. It inherited them from <code>Animal</code>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 8. WHAT IS INHERITED + OBJECT CLASS ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Inheritance</span>
+        <h2>What Is Inherited and the <code>Object</code> Class</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Access and Inheritance</h3>
+            <table>
+              <thead><tr><th>Member</th><th>Inherited?</th></tr></thead>
+              <tbody>
+                <tr><td><code>public</code></td><td>Yes</td></tr>
+                <tr><td><code>protected</code></td><td>Yes</td></tr>
+                <tr><td>default (same package)</td><td>Yes</td></tr>
+                <tr><td>default (different package)</td><td>No</td></tr>
+                <tr><td><code>private</code></td><td>No</td></tr>
+                <tr><td>Constructors</td><td>No (accessible via <code>super</code>)</td></tr>
+                <tr><td><code>static</code> members</td><td>Yes (via class name)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>The <code>Object</code> Class</h3>
+            <p>Every class in Java implicitly extends <code>java.lang.Object</code> if no
+            other superclass is specified.</p>
+            <pre><span class="kw">class</span> Student {
+    String name;
+}
+
+<span class="cmt">// Equivalent to:</span>
+<span class="kw">class</span> Student <span class="kw">extends</span> Object {
+    String name;
+}</pre>
+          </div>
+          <div class="card accent">
+            <h3>Key Methods of <code>Object</code></h3>
+            <ul>
+              <li><code>toString()</code> — string representation.</li>
+              <li><code>equals(Object)</code> — equality.</li>
+              <li><code>hashCode()</code> — hash code.</li>
+              <li><code>getClass()</code> — runtime class.</li>
+              <li><code>clone()</code> — creates a copy (protected).</li>
+            </ul>
+          </div>
+          <div class="card warn">
+            <h3>Single Inheritance</h3>
+            <p>Java supports <strong>single inheritance</strong> for classes: a class can
+            extend only one superclass.</p>
+            <pre><span class="cmt">// class C extends A, B { } // compile error</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 9. SECTION DIVIDER — TYPES OF INHERITANCE ==================== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">02</div>
+      <h1>Types of Inheritance</h1>
+      <div class="rule"></div>
+      <p>Java supports several inheritance structures. The terminology describes the
+      shape of the class hierarchy. Some forms are supported only through
+      interfaces.</p>
+    </div>
+  </section>
+
+  <!-- ==================== 10. SINGLE INHERITANCE ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Types of Inheritance</span>
+        <h2>Single Inheritance</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>One subclass extends one superclass.</p>
+            <pre>    A
+    |
+    B</pre>
+          </div>
+          <div class="card accent">
+            <h3>Example</h3>
+            <pre><span class="kw">class</span> A {
+    <span class="kw">void</span> display() {
+        System.out.println(<span class="str">"Class A"</span>);
+    }
+}
+
+<span class="kw">class</span> B <span class="kw">extends</span> A {
+    <span class="kw">void</span> show() {
+        System.out.println(<span class="str">"Class B"</span>);
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Usage</h3>
+            <pre>B obj = <span class="kw">new</span> B();
+obj.display();  <span class="cmt">// inherited from A</span>
+obj.show();     <span class="cmt">// defined in B</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>Characteristics</h3>
+            <ul>
+              <li>Simplest form of inheritance.</li>
+              <li>Establishes a clear parent-child relationship.</li>
+              <li>Subclass inherits all accessible members of the superclass.</li>
+              <li>Foundation for multilevel and hierarchical inheritance.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 11. MULTILEVEL INHERITANCE ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Types of Inheritance</span>
+        <h2>Multilevel Inheritance</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>A subclass becomes the superclass of another class, forming a chain.</p>
+            <pre>    A
+    |
+    B
+    |
+    C</pre>
+          </div>
+          <div class="card accent">
+            <h3>Example</h3>
+            <pre><span class="kw">class</span> A {
+    <span class="kw">void</span> methodA() {
+        System.out.println(<span class="str">"A"</span>);
+    }
+}
+
+<span class="kw">class</span> B <span class="kw">extends</span> A {
+    <span class="kw">void</span> methodB() {
+        System.out.println(<span class="str">"B"</span>);
+    }
+}
+
+<span class="kw">class</span> C <span class="kw">extends</span> B {
+    <span class="kw">void</span> methodC() {
+        System.out.println(<span class="str">"C"</span>);
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Usage</h3>
+            <pre>C obj = <span class="kw">new</span> C();
+obj.methodA(); <span class="cmt">// inherited from A</span>
+obj.methodB(); <span class="cmt">// inherited from B</span>
+obj.methodC(); <span class="cmt">// defined in C</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>Transitive Inheritance</h3>
+            <p><code>C</code> inherits from <code>B</code>, which inherits from
+            <code>A</code>. Therefore <code>C</code> also inherits all accessible
+            members of <code>A</code>.</p>
+          </div>
+          <div class="card danger">
+            <h3>Caution</h3>
+            <p>Deep inheritance chains can become hard to understand. Prefer shallow
+            hierarchies. If a chain exceeds three or four levels, reconsider the
+            design.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 12. HIERARCHICAL INHERITANCE ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Types of Inheritance</span>
+        <h2>Hierarchical Inheritance</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>Multiple subclasses extend the same superclass.</p>
+            <pre>       A
+      / \
+     B   C</pre>
+          </div>
+          <div class="card accent">
+            <h3>Example</h3>
+            <pre><span class="kw">class</span> A {
+    <span class="kw">void</span> common() {
+        System.out.println(<span class="str">"Common behaviour"</span>);
+    }
+}
+
+<span class="kw">class</span> B <span class="kw">extends</span> A {
+    <span class="kw">void</span> methodB() {
+        System.out.println(<span class="str">"B"</span>);
+    }
+}
+
+<span class="kw">class</span> C <span class="kw">extends</span> A {
+    <span class="kw">void</span> methodC() {
+        System.out.println(<span class="str">"C"</span>);
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Usage</h3>
+            <pre>B b = <span class="kw">new</span> B();
+b.common();  <span class="cmt">// inherited from A</span>
+b.methodB(); <span class="cmt">// defined in B</span>
+
+C c = <span class="kw">new</span> C();
+c.common();  <span class="cmt">// inherited from A</span>
+c.methodC(); <span class="cmt">// defined in C</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>Common Use</h3>
+            <ul>
+              <li>Shapes: <code>Circle</code>, <code>Square</code>, <code>Triangle</code> all extend <code>Shape</code>.</li>
+              <li>Employees: <code>Manager</code>, <code>Developer</code> extend <code>Employee</code>.</li>
+              <li>Accounts: <code>SavingsAccount</code>, <code>CurrentAccount</code> extend <code>BankAccount</code>.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 13. MULTIPLE INHERITANCE — JAVA'S APPROACH ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Types of Inheritance</span>
+        <h2>Multiple Inheritance — Java's Approach</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card danger">
+            <h3>Not Supported Through Classes</h3>
+            <p>A class cannot extend more than one superclass.</p>
+            <pre>    A   B
+     \ /
+      C</pre>
+            <pre><span class="cmt">// Not allowed in Java</span>
+<span class="cmt">// class C extends A, B { }</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>Why Not?</h3>
+            <p>The <strong>diamond problem</strong>: if both <code>A</code> and
+            <code>B</code> define a method with the same signature, which one should
+            <code>C</code> inherit? Java avoids this ambiguity by disallowing multiple
+            inheritance of state through classes.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Supported Through Interfaces</h3>
+            <p>Multiple inheritance of <strong>type</strong> is achieved through
+            interfaces. A class can implement any number of interfaces.</p>
+            <pre><span class="kw">interface</span> A {
+    <span class="kw">void</span> methodA();
+}
+
+<span class="kw">interface</span> B {
+    <span class="kw">void</span> methodB();
+}
+
+<span class="kw">class</span> C <span class="kw">implements</span> A, B {
+    <span class="kw">public void</span> methodA() {
+        System.out.println(<span class="str">"A"</span>);
+    }
+    <span class="kw">public void</span> methodB() {
+        System.out.println(<span class="str">"B"</span>);
+    }
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 14. HYBRID INHERITANCE AND SUMMARY TABLE ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Types of Inheritance</span>
+        <h2>Hybrid Inheritance and Summary</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Hybrid Inheritance</h3>
+            <p>A combination of two or more inheritance types.</p>
+            <pre>       A
+      / \
+     B   C
+      \ /
+       D</pre>
+            <p><strong>Not supported through classes</strong> for the same reason as
+            multiple inheritance.</p>
+          </div>
+          <div class="card">
+            <h3>Approximated via Interfaces</h3>
+            <pre><span class="kw">interface</span> A {
+    <span class="kw">void</span> methodA();
+}
+<span class="kw">interface</span> B <span class="kw">extends</span> A {
+    <span class="kw">void</span> methodB();
+}
+<span class="kw">interface</span> C <span class="kw">extends</span> A {
+    <span class="kw">void</span> methodC();
+}
+<span class="kw">class</span> D <span class="kw">implements</span> B, C {
+    <span class="kw">public void</span> methodA() { }
+    <span class="kw">public void</span> methodB() { }
+    <span class="kw">public void</span> methodC() { }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Summary Table</h3>
+            <table>
+              <thead>
+                <tr><th>Type</th><th>Classes</th><th>Interfaces</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Single</td><td>Yes</td><td>Yes</td></tr>
+                <tr><td>Multilevel</td><td>Yes</td><td>Yes</td></tr>
+                <tr><td>Hierarchical</td><td>Yes</td><td>Yes</td></tr>
+                <tr><td>Multiple</td><td>No</td><td>Yes</td></tr>
+                <tr><td>Hybrid</td><td>No</td><td>Yes</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card warn">
+            <h3>Key Takeaway</h3>
+            <p>Java separates <strong>inheritance of state</strong> (classes, single only)
+            from <strong>inheritance of type</strong> (interfaces, multiple allowed).</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 15. SECTION DIVIDER — SUPER ==================== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">03</div>
+      <h1>The <code>super</code> Keyword</h1>
+      <div class="rule"></div>
+      <p>Inside a subclass, <code>super</code> refers to the immediate superclass. It
+      is used to call superclass constructors, access overridden methods, and
+      access hidden fields.</p>
+    </div>
+  </section>
+
+  <!-- ==================== 16. SUPER — OVERVIEW AND CONSTRUCTOR CALL ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">super</span>
+        <h2>Overview and Constructor Call</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>What Is <code>super</code>?</h3>
+            <p><code>super</code> is a reference to the immediate superclass of the
+            current object. It is used for three purposes:</p>
+            <ol>
+              <li>Call a superclass constructor: <code>super(...)</code>.</li>
+              <li>Call a superclass method: <code>super.methodName()</code>.</li>
+              <li>Access a superclass field: <code>super.fieldName</code>.</li>
+            </ol>
+          </div>
+          <div class="card warn">
+            <h3>Availability</h3>
+            <ul>
+              <li>Available in instance methods.</li>
+              <li>Available in constructors.</li>
+              <li>Not available in static methods or static blocks.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Calling a Superclass Constructor</h3>
+            <pre><span class="kw">class</span> Animal {
+    String name;
+
+    <span class="kw">public</span> Animal(String name) {
+        <span class="kw">this</span>.name = name;
+        System.out.println(<span class="str">"Animal constructor"</span>);
+    }
+}
+
+<span class="kw">class</span> Dog <span class="kw">extends</span> Animal {
+    String breed;
+
+    <span class="kw">public</span> Dog(String name, String breed) {
+        <span class="kw">super</span>(name);       <span class="cmt">// calls Animal(String)</span>
+        <span class="kw">this</span>.breed = breed;
+        System.out.println(<span class="str">"Dog constructor"</span>);
+    }
+}</pre>
+          </div>
+          <div class="card">
+            <h3>Output</h3>
+            <div class="term">
+              <div class="out">Animal constructor</div>
+              <div class="out">Dog constructor</div>
+            </div>
+          </div>
+          <div class="card danger">
+            <h3>Rule</h3>
+            <p><code>super(...)</code> must be the <strong>first statement</strong> in the
+            constructor body. If omitted, the compiler inserts <code>super()</code>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 17. SUPER.METHOD() AND SUPER.FIELD ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">super</span>
+        <h2><code>super.method()</code> and <code>super.field</code></h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Accessing a Superclass Method</h3>
+            <p>When a subclass overrides a method, <code>super.methodName()</code> calls
+            the superclass version.</p>
+            <pre><span class="kw">class</span> Animal {
+    <span class="kw">void</span> sound() {
+        System.out.println(<span class="str">"Some generic sound"</span>);
+    }
+}
+
+<span class="kw">class</span> Dog <span class="kw">extends</span> Animal {
+    <span class="kw">@Override</span>
+    <span class="kw">void</span> sound() {
+        <span class="kw">super</span>.sound();  <span class="cmt">// calls Animal's sound()</span>
+        System.out.println(<span class="str">"Woof!"</span>);
+    }
+}</pre>
+          </div>
+          <div class="card">
+            <h3>Output</h3>
+            <div class="term">
+              <div class="out">Some generic sound</div>
+              <div class="out">Woof!</div>
+            </div>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Accessing a Superclass Field</h3>
+            <p>When a subclass declares a field with the same name as a superclass
+            field, the subclass field <strong>hides</strong> the superclass field.
+            <code>super.fieldName</code> accesses the superclass field.</p>
+            <pre><span class="kw">class</span> Parent {
+    <span class="kw">int</span> value = <span class="num">10</span>;
+}
+
+<span class="kw">class</span> Child <span class="kw">extends</span> Parent {
+    <span class="kw">int</span> value = <span class="num">20</span>;
+
+    <span class="kw">void</span> display() {
+        System.out.println(<span class="str">"Child: "</span> + value);         <span class="cmt">// 20</span>
+        System.out.println(<span class="str">"Parent: "</span> + <span class="kw">super</span>.value);  <span class="cmt">// 10</span>
+    }
+}</pre>
+          </div>
+          <div class="card warn">
+            <h3>Field Hiding vs Method Overriding</h3>
+            <p>Field access is resolved at <strong>compile time</strong> based on the
+            reference type. Method calls are resolved at <strong>runtime</strong> based
+            on the object type. This difference is a common source of confusion.</p>
+          </div>
+          <div class="card danger">
+            <h3>Best Practice</h3>
+            <p>Avoid hiding fields. Use distinct field names to prevent confusion.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 18. SUPER VS THIS AND CHAINING RULES ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">super</span>
+        <h2><code>super</code> vs <code>this</code> and Chaining Rules</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Comparison</h3>
+            <table>
+              <thead>
+                <tr><th>Aspect</th><th><code>this</code></th><th><code>super</code></th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Refers to</td><td>Current object</td><td>Superclass</td></tr>
+                <tr><td>Constructor call</td><td><code>this(...)</code></td><td><code>super(...)</code></td></tr>
+                <tr><td>Method call</td><td><code>this.m()</code></td><td><code>super.m()</code></td></tr>
+                <tr><td>Field access</td><td><code>this.f</code></td><td><code>super.f</code></td></tr>
+                <tr><td>Static context</td><td>Not available</td><td>Not available</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card warn">
+            <h3>Mutual Exclusivity</h3>
+            <p>A constructor cannot contain both <code>this(...)</code> and
+            <code>super(...)</code>. Only one can be the first statement.</p>
+            <pre><span class="kw">class</span> B <span class="kw">extends</span> A {
+    <span class="kw">public</span> B() {
+        <span class="kw">super</span>();  <span class="cmt">// OK</span>
+    }
+
+    <span class="kw">public</span> B(<span class="kw">int</span> x) {
+        <span class="kw">this</span>();   <span class="cmt">// OK — calls B()</span>
+        <span class="cmt">// super(x); // would be compile error</span>
+    }
+}</pre>
+          </div>
+          <div class="card accent">
+            <h3>Indirect Super Call</h3>
+            <p><code>this(...)</code> can indirectly lead to a <code>super(...)</code> call
+            through the constructor it delegates to.</p>
+          </div>
+          <div class="card danger">
+            <h3>Common Compile Error</h3>
+            <pre><span class="kw">class</span> Animal {
+    <span class="kw">public</span> Animal(String name) { }
+}
+
+<span class="kw">class</span> Dog <span class="kw">extends</span> Animal {
+    <span class="kw">public</span> Dog() {
+        <span class="cmt">// compiler tries super() — not found</span>
+    }
+}</pre>
+            <p>Fix: explicitly call <code>super("Unknown")</code>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 19. SECTION DIVIDER — METHOD OVERRIDING ==================== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">04</div>
+      <h1>Method Overriding</h1>
+      <div class="rule"></div>
+      <p>Overriding lets a subclass provide a new implementation for a method it
+      inherited. It is the foundation of runtime polymorphism in Java.</p>
+    </div>
+  </section>
+
+  <!-- ==================== 20. METHOD OVERRIDING — DEFINITION AND RULES ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Method Overriding</span>
+        <h2>Definition and Rules</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>Method overriding occurs when a subclass provides a new implementation
+            for a method that is already defined in its superclass. The method
+            signature must be the same.</p>
+            <pre><span class="kw">class</span> Animal {
+    <span class="kw">void</span> sound() {
+        System.out.println(<span class="str">"Some generic sound"</span>);
+    }
+}
+
+<span class="kw">class</span> Dog <span class="kw">extends</span> Animal {
+    <span class="kw">@Override</span>
+    <span class="kw">void</span> sound() {
+        System.out.println(<span class="str">"Woof!"</span>);
+    }
+}</pre>
+          </div>
+          <div class="card">
+            <h3>Dynamic Dispatch</h3>
+            <pre>Animal a = <span class="kw">new</span> Dog();
+a.sound(); <span class="cmt">// Woof! (runtime decision)</span></pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Rules for Overriding</h3>
+            <table>
+              <thead><tr><th>Rule</th><th>Explanation</th></tr></thead>
+              <tbody>
+                <tr><td>Same name</td><td>Must match exactly</td></tr>
+                <tr><td>Same parameters</td><td>Types and order must match</td></tr>
+                <tr><td>Covariant return</td><td>Same or subtype</td></tr>
+                <tr><td>Access modifier</td><td>Cannot be more restrictive</td></tr>
+                <tr><td>final methods</td><td>Cannot be overridden</td></tr>
+                <tr><td>static methods</td><td>Hidden, not overridden</td></tr>
+                <tr><td>private methods</td><td>Not inherited</td></tr>
+                <tr><td>Exceptions</td><td>Cannot throw broader checked exceptions</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 21. @OVERRIDE AND OVERRIDING VS OVERLOADING ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Method Overriding</span>
+        <h2><code>@Override</code> and Overriding vs Overloading</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>The <code>@Override</code> Annotation</h3>
+            <p>Tells the compiler that the method is intended to override a superclass
+            method. If it does not, the compiler produces an error.</p>
+            <pre><span class="kw">class</span> Dog <span class="kw">extends</span> Animal {
+    <span class="kw">@Override</span>
+    <span class="kw">void</span> sound() {
+        System.out.println(<span class="str">"Woof!"</span>);
+    }
+}</pre>
+          </div>
+          <div class="card">
+            <h3>Benefits</h3>
+            <ul>
+              <li>Catches typos in the method signature.</li>
+              <li>Documents intent.</li>
+              <li>Makes code easier to review.</li>
+              <li>Protects against accidental overloading.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Overriding vs Overloading</h3>
+            <table>
+              <thead>
+                <tr><th>Aspect</th><th>Overriding</th><th>Overloading</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Where</td><td>Subclass overrides superclass</td><td>Same class, different parameters</td></tr>
+                <tr><td>Signature</td><td>Same</td><td>Different</td></tr>
+                <tr><td>Return type</td><td>Same or covariant</td><td>Can differ</td></tr>
+                <tr><td>Binding</td><td>Runtime</td><td>Compile-time</td></tr>
+                <tr><td>Polymorphism</td><td>Runtime polymorphism</td><td>Compile-time polymorphism</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card warn">
+            <h3>Memory Aid</h3>
+            <p><strong>Overriding</strong> = same name, same parameters, different class.
+            <strong>Overloading</strong> = same name, different parameters, same class.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 22. OVERRIDING TOSTRING, EQUALS, HASHCODE ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Method Overriding</span>
+        <h2>Overriding <code>toString()</code>, <code>equals()</code>, and <code>hashCode()</code></h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3><code>toString()</code></h3>
+            <p>Default returns class name and hash code. Override for a meaningful
+            representation.</p>
+            <pre><span class="kw">class</span> Student {
+    String name;
+    <span class="kw">int</span> rollNo;
+
+    <span class="kw">public</span> Student(String name, <span class="kw">int</span> rollNo) {
+        <span class="kw">this</span>.name = name;
+        <span class="kw">this</span>.rollNo = rollNo;
+    }
+
+    <span class="kw">@Override</span>
+    <span class="kw">public</span> String toString() {
+        <span class="kw">return</span> <span class="str">"Student{name='"</span> + name
+            + <span class="str">"', rollNo="</span> + rollNo + <span class="str">"}"</span>;
+    }
+}</pre>
+          </div>
+          <div class="card">
+            <h3>Usage</h3>
+            <pre>Student s = <span class="kw">new</span> Student(<span class="str">"Alice"</span>, <span class="num">101</span>);
+System.out.println(s);
+<span class="cmt">// Student{name='Alice', rollNo=101}</span></pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3><code>equals()</code> and <code>hashCode()</code></h3>
+            <p>Override both together to maintain the contract: equal objects must
+            have equal hash codes.</p>
+            <pre><span class="kw">import</span> java.util.Objects;
+
+<span class="kw">@Override</span>
+<span class="kw">public boolean</span> equals(Object o) {
+    <span class="kw">if</span> (<span class="kw">this</span> == o) <span class="kw">return true</span>;
+    <span class="kw">if</span> (o == <span class="kw">null</span> || getClass() != o.getClass())
+        <span class="kw">return false</span>;
+    Student s = (Student) o;
+    <span class="kw">return</span> rollNo == s.rollNo
+        &amp;&amp; Objects.equals(name, s.name);
+}
+
+<span class="kw">@Override</span>
+<span class="kw">public int</span> hashCode() {
+    <span class="kw">return</span> Objects.hash(name, rollNo);
+}</pre>
+          </div>
+          <div class="card warn">
+            <h3>The Contract</h3>
+            <ul>
+              <li>Reflexive, symmetric, transitive, consistent.</li>
+              <li><code>x.equals(null)</code> is false.</li>
+              <li>Equal objects have equal hash codes.</li>
+              <li>Always override both together.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 23. ACCESS MODIFIER AND EXCEPTION RULES ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Method Overriding</span>
+        <h2>Access Modifier and Exception Rules</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Visibility Cannot Be Reduced</h3>
+            <table>
+              <thead>
+                <tr><th>Parent method</th><th>Child method allowed</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>public</code></td><td><code>public</code></td></tr>
+                <tr><td><code>protected</code></td><td><code>protected</code>, <code>public</code></td></tr>
+                <tr><td>default</td><td>default, <code>protected</code>, <code>public</code></td></tr>
+                <tr><td><code>private</code></td><td>Not inherited</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card danger">
+            <h3>Compile Error</h3>
+            <pre><span class="kw">class</span> Parent {
+    <span class="kw">public void</span> display() { }
+}
+
+<span class="kw">class</span> Child <span class="kw">extends</span> Parent {
+    <span class="cmt">// protected void display() { } // error</span>
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Exception Rules</h3>
+            <p>The overriding method cannot throw broader <strong>checked</strong>
+            exceptions than the overridden method.</p>
+            <pre><span class="kw">class</span> Parent {
+    <span class="kw">void</span> read() <span class="kw">throws</span> java.io.IOException { }
+}
+
+<span class="kw">class</span> Child <span class="kw">extends</span> Parent {
+    <span class="kw">@Override</span>
+    <span class="kw">void</span> read() <span class="kw">throws</span> java.io.FileNotFoundException { }
+    <span class="cmt">// narrower — OK</span>
+}</pre>
+          </div>
+          <div class="card warn">
+            <h3>Unchecked Exceptions</h3>
+            <p>Runtime exceptions (<code>RuntimeException</code> and its subclasses) are
+            not restricted by overriding rules.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 24. SECTION DIVIDER — COVARIANT RETURN TYPES ==================== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">05</div>
+      <h1>Covariant Return Types</h1>
+      <div class="rule"></div>
+      <p>An overriding method may return a subtype of the return type declared by
+      the overridden method. This reduces the need for casts and enables more
+      fluent APIs.</p>
+    </div>
+  </section>
+
+  <!-- ==================== 25. COVARIANT RETURN TYPES — DEFINITION AND EXAMPLE ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Covariant Return Types</span>
+        <h2>Definition and Example</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>A covariant return type allows an overriding method to return a
+            <strong>subtype</strong> of the return type declared in the overridden
+            method. Introduced in Java 5.</p>
+            <pre><span class="kw">class</span> Animal {
+    Animal create() {
+        <span class="kw">return new</span> Animal();
+    }
+}
+
+<span class="kw">class</span> Dog <span class="kw">extends</span> Animal {
+    <span class="kw">@Override</span>
+    Dog create() {           <span class="cmt">// Dog is a subtype of Animal</span>
+        <span class="kw">return new</span> Dog();
+    }
+}</pre>
+          </div>
+          <div class="card">
+            <h3>Benefit</h3>
+            <pre>Dog d = <span class="kw">new</span> Dog();
+Dog d2 = d.create();  <span class="cmt">// no cast needed</span></pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Valid Example — Number and Integer</h3>
+            <pre><span class="kw">class</span> Parent {
+    Number getValue() {
+        <span class="kw">return</span> <span class="num">0</span>;
+    }
+}
+
+<span class="kw">class</span> Child <span class="kw">extends</span> Parent {
+    <span class="kw">@Override</span>
+    Integer getValue() {    <span class="cmt">// Integer is a subtype of Number</span>
+        <span class="kw">return</span> <span class="num">0</span>;
+    }
+}</pre>
+          </div>
+          <div class="card danger">
+            <h3>Invalid Example</h3>
+            <pre><span class="kw">class</span> Parent {
+    Integer getValue() { <span class="kw">return</span> <span class="num">0</span>; }
+}
+
+<span class="kw">class</span> Child <span class="kw">extends</span> Parent {
+    <span class="cmt">// Number getValue() { return 0; } // error</span>
+    <span class="cmt">// Number is a supertype, not a subtype</span>
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 26. COVARIANT RETURN TYPES — BUILDER PATTERN ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Covariant Return Types</span>
+        <h2>Practical Use — Builder Pattern</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Example</h3>
+            <pre><span class="kw">class</span> Pizza {
+    Pizza addCheese() {
+        System.out.println(<span class="str">"Adding cheese"</span>);
+        <span class="kw">return this</span>;
+    }
+}
+
+<span class="kw">class</span> Margherita <span class="kw">extends</span> Pizza {
+    <span class="kw">@Override</span>
+    Margherita addCheese() {     <span class="cmt">// covariant</span>
+        <span class="kw">super</span>.addCheese();
+        System.out.println(<span class="str">"Adding extra mozzarella"</span>);
+        <span class="kw">return this</span>;
+    }
+
+    Margherita addBasil() {
+        System.out.println(<span class="str">"Adding basil"</span>);
+        <span class="kw">return this</span>;
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Usage — Fluent API</h3>
+            <pre>Margherita m = <span class="kw">new</span> Margherita()
+    .addCheese()
+    .addBasil(); <span class="cmt">// no cast needed</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>Why This Matters</h3>
+            <ul>
+              <li>Without covariance, <code>addCheese()</code> would return <code>Pizza</code>.</li>
+              <li>You would need a cast to call <code>addBasil()</code>.</li>
+              <li>Covariant return types preserve the subclass type through chained calls.</li>
+              <li>Enables fluent APIs and builder patterns.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Common in the Standard Library</h3>
+            <p><code>Object.clone()</code> returns <code>Object</code>, but overrides
+            typically return the specific class.</p>
+            <pre><span class="kw">@Override</span>
+<span class="kw">public</span> Student clone() {
+    <span class="kw">return new</span> Student(<span class="kw">this</span>.name, <span class="kw">this</span>.rollNo);
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 27. SECTION DIVIDER — ABSTRACT CLASSES ==================== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">06</div>
+      <h1>Abstract Classes</h1>
+      <div class="rule"></div>
+      <p>An abstract class is a class that cannot be instantiated. It may contain
+      abstract methods (no body) and concrete methods (with body). It is the base
+      for a hierarchy.</p>
+    </div>
+  </section>
+
+  <!-- ==================== 28. ABSTRACT CLASSES — DEFINITION AND RULES ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Abstract Classes</span>
+        <h2>Definition and Rules</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>An abstract class is declared with the <code>abstract</code> keyword. It
+            cannot be instantiated. It may contain:</p>
+            <ul>
+              <li>Abstract methods (no body).</li>
+              <li>Concrete methods (with body).</li>
+              <li>Fields.</li>
+              <li>Constructors.</li>
+            </ul>
+            <pre><span class="kw">abstract class</span> Shape {
+    String name;
+
+    <span class="kw">public</span> Shape(String name) {
+        <span class="kw">this</span>.name = name;
+    }
+
+    <span class="kw">abstract double</span> area();   <span class="cmt">// no body</span>
+
+    <span class="kw">void</span> display() {           <span class="cmt">// concrete</span>
+        System.out.println(name + <span class="str">": "</span> + area());
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Rules</h3>
+            <ul>
+              <li>Cannot be instantiated.</li>
+              <li>Can have constructors (called via <code>super</code>).</li>
+              <li>Can have abstract and concrete methods.</li>
+              <li>Can have fields.</li>
+              <li>Subclasses must override all abstract methods or be abstract themselves.</li>
+              <li>Can extend another abstract class.</li>
+              <li>Can implement interfaces.</li>
+            </ul>
+          </div>
+          <div class="card danger">
+            <h3>Compile Error</h3>
+            <pre>Shape s = <span class="kw">new</span> Shape(<span class="str">"S"</span>);
+<span class="cmt">// error: Shape is abstract; cannot be instantiated</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 29. ABSTRACT METHODS ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Abstract Classes</span>
+        <h2>Abstract Methods</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>An abstract method has no implementation. It must be overridden by any
+            concrete subclass.</p>
+            <pre><span class="kw">abstract class</span> Animal {
+    <span class="kw">abstract void</span> sound();
+}</pre>
+          </div>
+          <div class="card">
+            <h3>Rules</h3>
+            <ul>
+              <li>Can only be declared in an abstract class.</li>
+              <li>The class must be abstract if it contains at least one abstract method.</li>
+              <li>Subclasses must override all abstract methods or be declared abstract.</li>
+              <li>Cannot be <code>private</code> (subclasses could not override).</li>
+              <li>Cannot be <code>static</code>.</li>
+              <li>Cannot be <code>final</code>.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Concrete Subclass Must Implement</h3>
+            <pre><span class="kw">class</span> Dog <span class="kw">extends</span> Animal {
+    <span class="kw">@Override</span>
+    <span class="kw">void</span> sound() {
+        System.out.println(<span class="str">"Woof!"</span>);
+    }
+}</pre>
+          </div>
+          <div class="card danger">
+            <h3>Compile Error</h3>
+            <pre><span class="kw">class</span> Cat <span class="kw">extends</span> Animal {
+    <span class="cmt">// does not override sound()</span>
+}
+<span class="cmt">// error: Cat is not abstract and does not</span>
+<span class="cmt">// override abstract method sound()</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>Fix</h3>
+            <p>Either override <code>sound()</code> or declare <code>Cat</code> as
+            abstract.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 30. ABSTRACT CLASS — COMPLETE EXAMPLE ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Abstract Classes</span>
+        <h2>Complete Example — Shape Hierarchy</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Shape.java</h3>
+            <pre><span class="kw">abstract class</span> Shape {
+    String name;
+
+    <span class="kw">public</span> Shape(String name) {
+        <span class="kw">this</span>.name = name;
+    }
+
+    <span class="kw">abstract double</span> area();
+    <span class="kw">abstract double</span> perimeter();
+
+    <span class="kw">@Override</span>
+    <span class="kw">public</span> String toString() {
+        <span class="kw">return</span> String.format(
+            <span class="str">"%s: area=%.2f, perimeter=%.2f"</span>,
+            name, area(), perimeter());
+    }
+}</pre>
+          </div>
+          <div class="card accent">
+            <h3>Circle.java</h3>
+            <pre><span class="kw">class</span> Circle <span class="kw">extends</span> Shape {
+    <span class="kw">double</span> radius;
+
+    <span class="kw">public</span> Circle(<span class="kw">double</span> radius) {
+        <span class="kw">super</span>(<span class="str">"Circle"</span>);
+        <span class="kw">this</span>.radius = radius;
+    }
+
+    <span class="kw">@Override</span>
+    <span class="kw">double</span> area() {
+        <span class="kw">return</span> Math.PI * radius * radius;
+    }
+
+    <span class="kw">@Override</span>
+    <span class="kw">double</span> perimeter() {
+        <span class="kw">return</span> <span class="num">2</span> * Math.PI * radius;
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Rectangle.java</h3>
+            <pre><span class="kw">class</span> Rectangle <span class="kw">extends</span> Shape {
+    <span class="kw">double</span> width, height;
+
+    <span class="kw">public</span> Rectangle(<span class="kw">double</span> width,
+                     <span class="kw">double</span> height) {
+        <span class="kw">super</span>(<span class="str">"Rectangle"</span>);
+        <span class="kw">this</span>.width = width;
+        <span class="kw">this</span>.height = height;
+    }
+
+    <span class="kw">@Override</span>
+    <span class="kw">double</span> area() {
+        <span class="kw">return</span> width * height;
+    }
+
+    <span class="kw">@Override</span>
+    <span class="kw">double</span> perimeter() {
+        <span class="kw">return</span> <span class="num">2</span> * (width + height);
+    }
+}</pre>
+          </div>
+          <div class="card warn">
+            <h3>Usage</h3>
+            <pre>Shape[] shapes = {
+    <span class="kw">new</span> Circle(<span class="num">5</span>),
+    <span class="kw">new</span> Rectangle(<span class="num">4</span>, <span class="num">6</span>)
+};
+
+<span class="kw">for</span> (Shape s : shapes) {
+    System.out.println(s);
+}</pre>
+            <div class="term" style="margin-top:1vh">
+              <div class="out">Circle: area=78.54, perimeter=31.42</div>
+              <div class="out">Rectangle: area=24.00, perimeter=20.00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 31. ABSTRACT VS CONCRETE + VS INTERFACE ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Abstract Classes</span>
+        <h2>Abstract vs Concrete and Interface Preview</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Abstract vs Concrete Class</h3>
+            <table>
+              <thead>
+                <tr><th>Aspect</th><th>Abstract</th><th>Concrete</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Instantiation</td><td>Not allowed</td><td>Allowed</td></tr>
+                <tr><td>Abstract methods</td><td>Allowed</td><td>Not allowed</td></tr>
+                <tr><td>Purpose</td><td>Base for hierarchy</td><td>Complete implementation</td></tr>
+                <tr><td>Keyword</td><td><code>abstract</code></td><td>None</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Abstract Class vs Interface (Preview)</h3>
+            <table>
+              <thead>
+                <tr><th>Aspect</th><th>Abstract Class</th><th>Interface</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Multiple inheritance</td><td>No</td><td>Yes</td></tr>
+                <tr><td>State (fields)</td><td>Yes</td><td>Only constants</td></tr>
+                <tr><td>Constructors</td><td>Yes</td><td>No</td></tr>
+                <tr><td>Methods</td><td>Abstract + concrete</td><td>Abstract, default, static</td></tr>
+                <tr><td>Access modifiers</td><td>Any</td><td>Public</td></tr>
+                <tr><td>Use</td><td>Shared state and behaviour</td><td>Capability contract</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card warn">
+            <h3>When to Choose</h3>
+            <p>Abstract class when subclasses share state or need partial implementation.
+            Interface when you need a capability contract that unrelated classes can
+            implement.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 32. SECTION DIVIDER — INTERFACES ==================== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">07</div>
+      <h1>Interfaces</h1>
+      <div class="rule"></div>
+      <p>An interface defines a contract — a set of methods that implementing classes
+      must provide. Interfaces enable multiple inheritance of type and decouple
+      the contract from the implementation.</p>
+    </div>
+  </section>
+
+  <!-- ==================== 33. INTERFACES — DEFINITION AND MEMBERS ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Interfaces</span>
+        <h2>Definition and Members</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>An interface is a reference type declared with the <code>interface</code>
+            keyword. It defines a set of methods that implementing classes must
+            provide.</p>
+            <pre><span class="kw">interface</span> Drawable {
+    <span class="kw">void</span> draw();
+}</pre>
+          </div>
+          <div class="card accent">
+            <h3>Implementing an Interface</h3>
+            <pre><span class="kw">class</span> Circle <span class="kw">implements</span> Drawable {
+    <span class="kw">@Override</span>
+    <span class="kw">public void</span> draw() {
+        System.out.println(<span class="str">"Drawing a circle"</span>);
+    }
+}</pre>
+            <p>Interface methods are implicitly <code>public</code>. The implementing
+            class must declare them <code>public</code>.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Members</h3>
+            <table>
+              <thead>
+                <tr><th>Member</th><th>Implicit modifier</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Abstract methods</td><td><code>public abstract</code></td></tr>
+                <tr><td>Constants</td><td><code>public static final</code></td></tr>
+                <tr><td>Default methods</td><td><code>public default</code></td></tr>
+                <tr><td>Static methods</td><td><code>public static</code></td></tr>
+                <tr><td>Private methods</td><td><code>private</code> (Java 9+)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card warn">
+            <h3>Constants in Interfaces</h3>
+            <pre><span class="kw">interface</span> Constants {
+    <span class="kw">double</span> PI = <span class="num">3.14159</span>;      <span class="cmt">// public static final</span>
+    <span class="kw">int</span> MAX_SPEED = <span class="num">200</span>;
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 34. DEFAULT, STATIC, AND PRIVATE METHODS ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Interfaces</span>
+        <h2>Default, Static, and Private Methods</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Default Methods (Java 8+)</h3>
+            <p>Provide a concrete implementation in an interface. Allow adding new
+            methods without breaking existing implementations.</p>
+            <pre><span class="kw">interface</span> Vehicle {
+    <span class="kw">void</span> start();
+    <span class="kw">void</span> stop();
+
+    <span class="kw">default void</span> honk() {
+        System.out.println(<span class="str">"Beep beep!"</span>);
+    }
+}</pre>
+          </div>
+          <div class="card warn">
+            <h3>Conflict Resolution</h3>
+            <p>If a class implements two interfaces that both define a default method
+            with the same signature, the class must override it.</p>
+            <pre><span class="kw">class</span> C <span class="kw">implements</span> A, B {
+    <span class="kw">@Override</span>
+    <span class="kw">public void</span> hello() {
+        A.<span class="kw">super</span>.hello();
+        <span class="cmt">// or B.super.hello()</span>
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Static Methods (Java 8+)</h3>
+            <p>Belong to the interface, not to implementing classes.</p>
+            <pre><span class="kw">interface</span> MathUtil {
+    <span class="kw">static int</span> square(<span class="kw">int</span> n) {
+        <span class="kw">return</span> n * n;
+    }
+}
+
+<span class="kw">int</span> result = MathUtil.square(<span class="num">5</span>);</pre>
+          </div>
+          <div class="card accent">
+            <h3>Private Methods (Java 9+)</h3>
+            <p>Helper methods for default and static methods.</p>
+            <pre><span class="kw">interface</span> Logger {
+    <span class="kw">default void</span> logInfo(String msg) {
+        log(<span class="str">"INFO"</span>, msg);
+    }
+
+    <span class="kw">private void</span> log(String level, String msg) {
+        System.out.println(<span class="str">"["</span> + level + <span class="str">"] "</span> + msg);
+    }
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 35. MULTIPLE INHERITANCE VIA INTERFACES ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Interfaces</span>
+        <h2>Multiple Inheritance via Interfaces</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>A Class Can Implement Many Interfaces</h3>
+            <pre><span class="kw">interface</span> Flyable {
+    <span class="kw">void</span> fly();
+}
+
+<span class="kw">interface</span> Swimmable {
+    <span class="kw">void</span> swim();
+}
+
+<span class="kw">class</span> Duck <span class="kw">implements</span> Flyable, Swimmable {
+    <span class="kw">@Override</span>
+    <span class="kw">public void</span> fly() {
+        System.out.println(<span class="str">"Duck is flying"</span>);
+    }
+
+    <span class="kw">@Override</span>
+    <span class="kw">public void</span> swim() {
+        System.out.println(<span class="str">"Duck is swimming"</span>);
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Interface Inheritance</h3>
+            <p>An interface can extend one or more interfaces.</p>
+            <pre><span class="kw">interface</span> A {
+    <span class="kw">void</span> methodA();
+}
+
+<span class="kw">interface</span> B {
+    <span class="kw">void</span> methodB();
+}
+
+<span class="kw">interface</span> C <span class="kw">extends</span> A, B {
+    <span class="kw">void</span> methodC();
+}</pre>
+          </div>
+          <div class="card warn">
+            <h3>Key Point</h3>
+            <p>Interfaces enable <strong>multiple inheritance of type</strong> without
+            the diamond problem because there is no state to inherit. Only method
+            signatures (and default methods) are inherited.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 36. COMPLETE PAYMENT EXAMPLE ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Interfaces</span>
+        <h2>Complete Example — Payment System</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>PaymentMethod.java</h3>
+            <pre><span class="kw">interface</span> PaymentMethod {
+    <span class="kw">void</span> pay(<span class="kw">double</span> amount);
+
+    <span class="kw">default void</span> printReceipt(<span class="kw">double</span> amount) {
+        System.out.println(<span class="str">"Paid: "</span> + amount);
+    }
+}</pre>
+          </div>
+          <div class="card accent">
+            <h3>CreditCard.java</h3>
+            <pre><span class="kw">class</span> CreditCard <span class="kw">implements</span> PaymentMethod {
+    <span class="kw">private</span> String cardNumber;
+
+    <span class="kw">public</span> CreditCard(String cardNumber) {
+        <span class="kw">this</span>.cardNumber = cardNumber;
+    }
+
+    <span class="kw">@Override</span>
+    <span class="kw">public void</span> pay(<span class="kw">double</span> amount) {
+        System.out.println(<span class="str">"Paid "</span> + amount
+            + <span class="str">" via Credit Card ending "</span>
+            + cardNumber.substring(cardNumber.length() - <span class="num">4</span>));
+    }
+}</pre>
+          </div>
+          <div class="card accent">
+            <h3>UPI.java</h3>
+            <pre><span class="kw">class</span> UPI <span class="kw">implements</span> PaymentMethod {
+    <span class="kw">private</span> String upiId;
+
+    <span class="kw">public</span> UPI(String upiId) {
+        <span class="kw">this</span>.upiId = upiId;
+    }
+
+    <span class="kw">@Override</span>
+    <span class="kw">public void</span> pay(<span class="kw">double</span> amount) {
+        System.out.println(<span class="str">"Paid "</span> + amount
+            + <span class="str">" via UPI: "</span> + upiId);
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card warn">
+            <h3>Usage — Polymorphic Dispatch</h3>
+            <pre>PaymentMethod[] methods = {
+    <span class="kw">new</span> CreditCard(<span class="str">"1234567890123456"</span>),
+    <span class="kw">new</span> UPI(<span class="str">"alice@upi"</span>)
+};
+
+<span class="kw">for</span> (PaymentMethod m : methods) {
+    m.pay(<span class="num">500</span>);
+    m.printReceipt(<span class="num">500</span>);
+}</pre>
+          </div>
+          <div class="card">
+            <h3>Output</h3>
+            <div class="term">
+              <div class="out">Paid 500.0 via Credit Card ending 3456</div>
+              <div class="out">Paid: 500.0</div>
+              <div class="out">Paid 500.0 via UPI: alice@upi</div>
+              <div class="out">Paid: 500.0</div>
+            </div>
+          </div>
+          <div class="card accent">
+            <h3>Key Observations</h3>
+            <ul>
+              <li>The array type is <code>PaymentMethod</code>, not a concrete class.</li>
+              <li>Each object responds to <code>pay()</code> in its own way.</li>
+              <li><code>printReceipt()</code> is inherited from the interface's default method.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 37. ABSTRACT CLASS VS INTERFACE — DECISION GUIDE ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Interfaces</span>
+        <h2>Abstract Class vs Interface — Decision Guide</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Use an Abstract Class When</h3>
+            <ul>
+              <li>Subclasses share state (fields).</li>
+              <li>You need constructors.</li>
+              <li>You want to provide partial implementation.</li>
+              <li>The relationship is clearly "is-a".</li>
+              <li>You need to control access modifiers on methods.</li>
+            </ul>
+          </div>
+          <div class="card accent">
+            <h3>Use an Interface When</h3>
+            <ul>
+              <li>Unrelated classes need to share a capability.</li>
+              <li>You need multiple inheritance of type.</li>
+              <li>You want to decouple the contract from the implementation.</li>
+              <li>The relationship is "can-do".</li>
+              <li>You need a type that can be implemented by classes already extending something else.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card warn">
+            <h3>Combined Approach</h3>
+            <p>Use both together: an abstract class for shared state and partial
+            implementation, and an interface for the capability contract.</p>
+            <pre><span class="kw">interface</span> Drawable {
+    <span class="kw">void</span> draw();
+}
+
+<span class="kw">abstract class</span> Shape <span class="kw">implements</span> Drawable {
+    String name;
+    <span class="kw">abstract double</span> area();
+}
+
+<span class="kw">class</span> Circle <span class="kw">extends</span> Shape {
+    <span class="kw">double</span> radius;
+
+    <span class="kw">public void</span> draw() {
+        System.out.println(<span class="str">"Drawing circle"</span>);
+    }
+
+    <span class="kw">double</span> area() {
+        <span class="kw">return</span> Math.PI * radius * radius;
+    }
+}</pre>
+          </div>
+          <div class="card">
+            <h3>Rule of Thumb</h3>
+            <p>Program to an interface, not to an implementation. Use abstract classes
+            for shared code; use interfaces for shared contracts.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 38. PACKAGES — WHY AND HOW ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Packages</span>
+        <h2>Packages — Why and How</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Why Packages?</h3>
+            <table>
+              <thead><tr><th>Reason</th><th>Explanation</th></tr></thead>
+              <tbody>
+                <tr><td>Organization</td><td>Groups related classes</td></tr>
+                <tr><td>Naming conflicts</td><td>Two teams can define <code>Date</code> in different packages</td></tr>
+                <tr><td>Access control</td><td>Package-private members</td></tr>
+                <tr><td>Reusability</td><td>Compile into JAR files</td></tr>
+                <tr><td>Maintainability</td><td>Clear boundaries</td></tr>
+                <tr><td>Security</td><td>Class loader boundaries</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card accent">
+            <h3>Creating a Package</h3>
+            <pre><span class="cmt">// File: com/example/shapes/Circle.java</span>
+<span class="kw">package</span> com.example.shapes;
+
+<span class="kw">public class</span> Circle {
+    <span class="kw">public double</span> area(<span class="kw">double</span> r) {
+        <span class="kw">return</span> Math.PI * r * r;
+    }
+}</pre>
+            <p>The folder structure must mirror the package name.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Compiling and Running</h3>
+            <pre><span class="cmt"># Compile</span>
+javac -d out src/com/example/shapes/Circle.java
+
+<span class="cmt"># Run</span>
+java -cp out com.example.shapes.Circle</pre>
+          </div>
+          <div class="card warn">
+            <h3>Naming Convention</h3>
+            <p>Reverse domain name:</p>
+            <pre>com.company.project.module
+org.opensource.library</pre>
+            <p>All lowercase. Dots separate levels.</p>
+          </div>
+          <div class="card accent">
+            <h3>Common Layering</h3>
+            <pre>com.example.app
+├── model        <span class="cmt">// data classes</span>
+├── service      <span class="cmt">// business logic</span>
+├── repository   <span class="cmt">// persistence</span>
+├── controller   <span class="cmt">// entry points</span>
+└── util         <span class="cmt">// helpers</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 39. PACKAGES AND INHERITANCE + PRACTICAL EXERCISES ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Packages &amp; Practical</span>
+        <h2>Packages Across Inheritance and Practical Exercises</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Access Across Packages</h3>
+            <p>A subclass in a different package can access <code>protected</code> and
+            <code>public</code> members of the superclass, but not package-private
+            or <code>private</code> members.</p>
+            <pre><span class="cmt">// com/example/shapes/Shape.java</span>
+<span class="kw">package</span> com.example.shapes;
+
+<span class="kw">public class</span> Shape {
+    <span class="kw">protected double</span> area;
+    <span class="kw">public</span> String name;
+    <span class="kw">private int</span> id;
+    <span class="kw">double</span> internal; <span class="cmt">// package-private</span>
+}</pre>
+            <pre><span class="cmt">// com/example/threeD/Cube.java</span>
+<span class="kw">package</span> com.example.threeD;
+
+<span class="kw">import</span> com.example.shapes.Shape;
+
+<span class="kw">public class</span> Cube <span class="kw">extends</span> Shape {
+    <span class="kw">void</span> compute() {
+        area = <span class="num">100</span>;      <span class="cmt">// OK (protected)</span>
+        name = <span class="str">"Cube"</span>;   <span class="cmt">// OK (public)</span>
+        <span class="cmt">// id = 1;       // error (private)</span>
+        <span class="cmt">// internal = 5; // error (package-private)</span>
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Practical Exercises</h3>
+            <ul>
+              <li><strong>Exercise 1:</strong> Single inheritance — <code>Person</code> → <code>Student</code>.</li>
+              <li><strong>Exercise 2:</strong> Multilevel inheritance — <code>Vehicle</code> → <code>Car</code> → <code>ElectricCar</code>.</li>
+              <li><strong>Exercise 3:</strong> Method overriding — <code>Shape</code>, <code>Circle</code>, <code>Square</code>.</li>
+              <li><strong>Exercise 4:</strong> Covariant return type — <code>Factory</code>, <code>BookFactory</code>.</li>
+              <li><strong>Exercise 5:</strong> Abstract class — <code>Employee</code> with <code>Manager</code>, <code>Developer</code>.</li>
+              <li><strong>Exercise 6:</strong> Interface — <code>Rankable</code> with <code>Student</code>, <code>Employee</code>.</li>
+              <li><strong>Exercise 7:</strong> Packages — <code>com.example.model</code>, <code>service</code>, <code>util</code>.</li>
+            </ul>
+          </div>
+          <div class="card warn">
+            <h3>Viva Focus</h3>
+            <ul>
+              <li>Why does Java not support multiple inheritance through classes?</li>
+              <li>What is the difference between overriding and overloading?</li>
+              <li>When would you use an abstract class instead of an interface?</li>
+              <li>What does <code>@Override</code> do?</li>
+              <li>How does <code>super</code> differ from <code>this</code>?</li>
+              <li>What is a covariant return type?</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 40. SUMMARY AND CHECKLIST ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Wrap-Up</span>
+        <h2>Summary and Checklist</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Key Takeaways</h3>
+            <ul>
+              <li>Inheritance models "is-a" relationships and enables code reuse.</li>
+              <li>Java supports single, multilevel, and hierarchical inheritance through classes.</li>
+              <li>Multiple and hybrid inheritance are achieved through interfaces.</li>
+              <li><code>super</code> refers to the immediate superclass.</li>
+              <li>Method overriding enables runtime polymorphism.</li>
+              <li>Covariant return types allow an overriding method to return a subtype.</li>
+              <li>Abstract classes cannot be instantiated and may contain abstract methods.</li>
+              <li>Interfaces define capability contracts and support multiple inheritance of type.</li>
+              <li>Packages organize code and prevent naming conflicts.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card warn">
+            <h3>Before Next Week, Ensure You Can</h3>
+            <ul>
+              <li>Implement single, multilevel, and hierarchical inheritance.</li>
+              <li>Use <code>super</code> for constructors, methods, and fields.</li>
+              <li>Override methods with <code>@Override</code>.</li>
+              <li>Override <code>toString()</code>, <code>equals()</code>, and <code>hashCode()</code>.</li>
+              <li>Explain and use covariant return types.</li>
+              <li>Design abstract classes and concrete subclasses.</li>
+              <li>Define and implement interfaces with default methods.</li>
+              <li>Choose between abstract classes and interfaces.</li>
+              <li>Create packages and use imports.</li>
+            </ul>
+          </div>
+          <div class="card accent">
+            <h3>Next Week</h3>
+            <p>Polymorphism and Java 8 Constructs — dynamic binding, object casting,
+            <code>instanceof</code>, compile-time vs runtime polymorphism, lambda
+            expressions, functional interfaces, and default/static interface methods.</p>
+          </div>
+          <div class="card">
+            <p class="blink green" style="font-size:1.05em">End of Week 4 — Inheritance</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="hud">
+  <span class="brand">3rd Sem · Week 4 · Inheritance</span>
+  <span class="counter"><span id="cur">1</span> / <span id="total">40</span></span>
+</div>
+
+<div class="nav">
+  <button id="prev" title="Previous (←)">&#8249;</button>
+  <button id="next" title="Next (→)">&#8250;</button>
+</div>
+
+<div class="progress"><i id="bar"></i></div>
+
+<script>
+/* ---------------- Matrix rain ---------------- */
+(function () {
+  const canvas = document.getElementById('matrix');
+  const ctx = canvas.getContext('2d');
+  let cols, drops, fontSize = 14;
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    cols = Math.floor(canvas.width / fontSize);
+    drops = new Array(cols).fill(1);
+    ctx.font = fontSize + 'px monospace';
+  }
+
+  const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+  function draw() {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#00ff41';
+    ctx.font = fontSize + 'px monospace';
+    for (let i = 0; i < drops.length; i++) {
+      const text = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+        drops[i] = 0;
+      }
+      drops[i]++;
+    }
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  setInterval(draw, 55);
+})();
+
+/* ---------------- Slide navigation ---------------- */
+(function () {
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  const curEl = document.getElementById('cur');
+  const totalEl = document.getElementById('total');
+  const bar = document.getElementById('bar');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  let index = 0;
+
+  totalEl.textContent = total;
+
+  function render() {
+    slides.forEach((s, i) => s.classList.toggle('active', i === index));
+    curEl.textContent = index + 1;
+    bar.style.width = ((index + 1) / total * 100) + '%';
+    prevBtn.disabled = index === 0;
+    nextBtn.disabled = index === total - 1;
+    const active = slides[index];
+    if (active) active.scrollTop = 0;
+  }
+
+  function go(delta) {
+    const next = index + delta;
+    if (next < 0 || next >= total) return;
+    index = next;
+    render();
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault();
+      go(1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      go(-1);
+    } else if (e.key === 'Home') {
+      index = 0; render();
+    } else if (e.key === 'End') {
+      index = total - 1; render();
+    }
+  });
+
+  prevBtn.addEventListener('click', () => go(-1));
+  nextBtn.addEventListener('click', () => go(1));
+
+  document.getElementById('deck').addEventListener('click', (e) => {
+    if (e.target.closest('a, button, pre, code, table')) return;
+    go(1);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

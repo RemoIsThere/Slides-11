@@ -1,0 +1,2652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 4 — Classes, Objects &amp; Constructors | 5th Semester</title>
+<style>
+  :root {
+    --green: #00ff41;
+    --green-bright: #7dffa0;
+    --green-mid: #00c832;
+    --green-dim: #008f11;
+    --green-dark: #003b00;
+    --bg: #000000;
+    --panel: #060d06;
+    --panel-2: #0a140a;
+    --text: #c9f5c9;
+    --text-dim: #7fae7f;
+    --border: rgba(0, 255, 65, 0.25);
+    --border-soft: rgba(0, 255, 65, 0.12);
+    --amber: #ffb000;
+    --red: #ff3b3b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Consolas", "Courier New", "SF Mono", monospace;
+    overflow: hidden;
+  }
+
+  #matrix {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.18;
+    pointer-events: none;
+  }
+
+  .deck {
+    position: relative;
+    z-index: 1;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+    padding: 3.2vh 4vw 7vh 4vw;
+    overflow-y: auto;
+    overflow-x: hidden;
+    animation: fadeUp 0.35s ease-out;
+  }
+
+  .slide.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .slide::-webkit-scrollbar { width: 8px; }
+  .slide::-webkit-scrollbar-track { background: transparent; }
+  .slide::-webkit-scrollbar-thumb {
+    background: var(--green-dark);
+    border-radius: 4px;
+  }
+
+  .slide-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  .slide-head {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1.4vh;
+    margin-bottom: 2.4vh;
+  }
+
+  .slide-tag {
+    display: inline-block;
+    font-size: clamp(10px, 0.85vw, 13px);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--green-mid);
+    border: 1px solid var(--border);
+    padding: 3px 10px;
+    border-radius: 3px;
+    margin-bottom: 1vh;
+    background: rgba(0, 255, 65, 0.05);
+  }
+
+  h1 {
+    font-size: clamp(26px, 3.6vw, 52px);
+    color: var(--green);
+    text-shadow: 0 0 14px rgba(0, 255, 65, 0.55);
+    letter-spacing: 0.02em;
+    line-height: 1.15;
+  }
+
+  h2 {
+    font-size: clamp(20px, 2.4vw, 34px);
+    color: var(--green);
+    text-shadow: 0 0 10px rgba(0, 255, 65, 0.4);
+    letter-spacing: 0.01em;
+  }
+
+  h3 {
+    font-size: clamp(15px, 1.35vw, 21px);
+    color: var(--green-bright);
+    margin-bottom: 1vh;
+    letter-spacing: 0.02em;
+  }
+
+  h4 {
+    font-size: clamp(13px, 1.1vw, 17px);
+    color: var(--green-mid);
+    margin-bottom: 0.8vh;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  p, li {
+    font-size: clamp(13px, 1.05vw, 17px);
+    line-height: 1.65;
+    color: var(--text);
+  }
+
+  ul, ol { padding-left: 1.4em; }
+  li { margin-bottom: 0.55vh; }
+  li::marker { color: var(--green-mid); }
+
+  strong { color: var(--green-bright); font-weight: 600; }
+  em { color: var(--amber); font-style: normal; }
+
+  .cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.2vw;
+  }
+  .cols-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.6vw;
+  }
+  .stack > * + * { margin-top: 1.6vh; }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--green-dim);
+    border-radius: 4px;
+    padding: 1.6vh 1.4vw;
+  }
+  .card.accent { border-left-color: var(--green); box-shadow: 0 0 18px rgba(0,255,65,0.08); }
+  .card.warn { border-left-color: var(--amber); }
+  .card.danger { border-left-color: var(--red); }
+
+  .card h3 { margin-bottom: 0.8vh; }
+
+  pre {
+    background: #030803;
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--green-mid);
+    border-radius: 4px;
+    padding: 1.2vh 1vw;
+    overflow-x: auto;
+    font-size: clamp(11px, 0.92vw, 15px);
+    line-height: 1.55;
+    color: var(--green-bright);
+    white-space: pre;
+  }
+  pre .kw  { color: #66d9ff; }
+  pre .str { color: #ffd479; }
+  pre .cmt { color: #4d7a4d; font-style: italic; }
+  pre .num { color: #ff9d5c; }
+  pre .cls { color: #7dffa0; }
+
+  code {
+    font-family: inherit;
+    background: rgba(0, 255, 65, 0.08);
+    border: 1px solid var(--border-soft);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--green-bright);
+    font-size: 0.95em;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: clamp(11px, 0.95vw, 15px);
+    margin-top: 0.6vh;
+  }
+  th, td {
+    border: 1px solid var(--border-soft);
+    padding: 0.7vh 0.8vw;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: rgba(0, 255, 65, 0.10);
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.85em;
+  }
+  td { color: var(--text); }
+  tr:nth-child(even) td { background: rgba(0, 255, 65, 0.025); }
+
+  .section-slide .slide-inner {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .section-slide .num {
+    font-size: clamp(70px, 10vw, 160px);
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--green-dim);
+    line-height: 1;
+    margin-bottom: 1vh;
+    letter-spacing: 0.02em;
+  }
+  .section-slide h1 {
+    font-size: clamp(34px, 5vw, 72px);
+  }
+  .section-slide .rule {
+    width: 120px;
+    height: 3px;
+    background: var(--green);
+    margin: 2.2vh 0;
+    box-shadow: 0 0 14px var(--green);
+  }
+  .section-slide p {
+    color: var(--text-dim);
+    max-width: 760px;
+    font-size: clamp(14px, 1.15vw, 19px);
+  }
+
+  .title-slide .slide-inner {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .title-slide .kicker {
+    color: var(--green-mid);
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    font-size: clamp(11px, 0.9vw, 14px);
+    margin-bottom: 2vh;
+  }
+  .title-slide h1 {
+    font-size: clamp(34px, 5.2vw, 76px);
+    line-height: 1.05;
+    margin-bottom: 1.6vh;
+  }
+  .title-slide .sub {
+    color: var(--text-dim);
+    font-size: clamp(14px, 1.2vw, 20px);
+    max-width: 900px;
+    line-height: 1.6;
+  }
+  .title-slide .meta {
+    margin-top: 4vh;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .chip {
+    border: 1px solid var(--border);
+    background: rgba(0, 255, 65, 0.05);
+    color: var(--green-bright);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: clamp(11px, 0.9vw, 14px);
+    letter-spacing: 0.06em;
+  }
+
+  .hud {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 22px;
+    background: linear-gradient(to top, rgba(0,0,0,0.92), rgba(0,0,0,0));
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    pointer-events: none;
+  }
+  .hud .counter { color: var(--green); }
+  .hud .brand { color: var(--green-dim); text-transform: uppercase; }
+
+  .nav {
+    position: fixed;
+    right: 22px;
+    bottom: 42px;
+    z-index: 6;
+    display: flex;
+    gap: 10px;
+  }
+  .nav button {
+    width: 42px; height: 42px;
+    background: rgba(0, 20, 0, 0.7);
+    border: 1px solid var(--border);
+    color: var(--green);
+    font-family: inherit;
+    font-size: 18px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    display: grid;
+    place-items: center;
+  }
+  .nav button:hover {
+    background: rgba(0, 255, 65, 0.12);
+    box-shadow: 0 0 14px rgba(0, 255, 65, 0.35);
+  }
+  .nav button:disabled { opacity: 0.25; cursor: not-allowed; }
+
+  .progress {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: 3px;
+    background: rgba(0, 255, 65, 0.08);
+    z-index: 7;
+  }
+  .progress > i {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: var(--green);
+    box-shadow: 0 0 10px var(--green);
+    transition: width 0.25s ease;
+  }
+
+  .pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    border: 1px solid var(--border);
+    color: var(--green-bright);
+    background: rgba(0,255,65,0.06);
+    letter-spacing: 0.06em;
+  }
+  .muted { color: var(--text-dim); }
+  .green { color: var(--green); }
+  .amber { color: var(--amber); }
+  .red { color: var(--red); }
+
+  .blink::after {
+    content: "_";
+    animation: blink 1s steps(2, start) infinite;
+    color: var(--green);
+  }
+  @keyframes blink { to { visibility: hidden; } }
+
+  .term {
+    background: #030803;
+    border: 1px solid var(--border-soft);
+    border-radius: 4px;
+    padding: 1.2vh 1vw;
+    font-size: clamp(11px, 0.92vw, 15px);
+    line-height: 1.55;
+  }
+  .term .prompt { color: var(--green-mid); }
+  .term .out { color: var(--text-dim); }
+  .term .err { color: var(--red); }
+
+  @media (max-width: 900px) {
+    .cols, .cols-3 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="matrix"></canvas>
+
+<div class="deck" id="deck">
+
+  <!-- ==================== 1. TITLE ==================== -->
+  <section class="slide title-slide active">
+    <div class="slide-inner">
+      <div class="kicker">5th Semester &nbsp;|&nbsp; Week 4 &nbsp;|&nbsp; 21–27 September 2026</div>
+      <h1>Classes, Objects<br>&amp; Constructors</h1>
+      <p class="sub">
+        The formal OOP foundations. This week we design classes with proper
+        encapsulation, write default, parameterized, and copy constructors, master
+        the <code>this</code> keyword, distinguish instance from static members, apply
+        <code>final</code> for constants and immutability, and understand object
+        identity versus object equality.
+      </p>
+      <div class="meta">
+        <span class="chip">Classes &amp; Objects</span>
+        <span class="chip">Instance vs Static</span>
+        <span class="chip">Encapsulation</span>
+        <span class="chip">Constructors</span>
+        <span class="chip">Constructor Chaining</span>
+        <span class="chip">this</span>
+        <span class="chip">final</span>
+        <span class="chip">Object Identity</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 2. WEEK OVERVIEW ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Overview</span>
+        <h2>What This Week Covers</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>1. Classes and Objects</h3>
+            <p>Class declaration, fields, methods, object creation with <code>new</code>, references and null.</p>
+          </div>
+          <div class="card accent">
+            <h3>2. Instance vs Static Variables</h3>
+            <p>Per-object state versus per-class state. When to use each.</p>
+          </div>
+          <div class="card accent">
+            <h3>3. Encapsulation</h3>
+            <p>Private fields, public accessors, validation, and invariants.</p>
+          </div>
+          <div class="card accent">
+            <h3>4. Constructors</h3>
+            <p>Default, parameterized, and copy constructors. Overloading and chaining.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>5. <code>this</code> Keyword</h3>
+            <p>Refer to the current object. Resolve naming conflicts. Enable method chaining.</p>
+          </div>
+          <div class="card accent">
+            <h3>6. Static Members</h3>
+            <p>Static variables, methods, blocks, and nested classes. Execution order.</p>
+          </div>
+          <div class="card accent">
+            <h3>7. <code>final</code></h3>
+            <p>Final variables, methods, classes, parameters. Constants and immutability.</p>
+          </div>
+          <div class="card accent">
+            <h3>8. Object Identity</h3>
+            <p>Identity vs equality. Overriding <code>equals()</code>, <code>hashCode()</code>, and <code>toString()</code>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 3. LEARNING OBJECTIVES ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Objectives</span>
+        <h2>Learning Outcomes for Week 4</h2>
+      </header>
+      <div class="cols">
+        <div class="card">
+          <h4>Technical Skills</h4>
+          <ul>
+            <li>Declare classes with private fields and public methods.</li>
+            <li>Create objects and use references correctly.</li>
+            <li>Distinguish instance members from static members.</li>
+            <li>Write default, parameterized, and copy constructors.</li>
+            <li>Overload and chain constructors using <code>this(...)</code>.</li>
+            <li>Apply <code>final</code> to variables, methods, and classes.</li>
+            <li>Override <code>equals()</code>, <code>hashCode()</code>, and <code>toString()</code>.</li>
+            <li>Write static blocks and understand execution order.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Conceptual Skills</h4>
+          <ul>
+            <li>Explain the difference between a class and an object.</li>
+            <li>Justify encapsulation and give concrete benefits.</li>
+            <li>Describe what <code>this</code> refers to and when it is required.</li>
+            <li>Explain the difference between identity and equality.</li>
+            <li>Reason about shallow vs deep copies.</li>
+            <li>Design an immutable class.</li>
+            <li>Model real-world entities (Student, Book, BankAccount) with proper OOP design.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 4. SECTION DIVIDER — CLASSES AND OBJECTS ==================== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">01</div>
+      <h1>Classes and Objects</h1>
+      <div class="rule"></div>
+      <p>A class is the fundamental unit of design in Java. An object is a concrete
+      instance of that design. Everything else in OOP builds on this foundation.</p>
+    </div>
+  </section>
+
+  <!-- ==================== 5. WHAT IS A CLASS ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Classes and Objects</span>
+        <h2>What Is a Class?</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>A class is a <strong>blueprint</strong> or <strong>template</strong> that
+            defines the structure and behaviour of a category of objects. It specifies:</p>
+            <ul>
+              <li>What data an object will hold (fields).</li>
+              <li>What operations an object can perform (methods).</li>
+              <li>How objects are created (constructors).</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Reference Type</h3>
+            <p>A class is a <strong>reference type</strong>. Variables of a class type
+            hold references to objects, not the objects themselves.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Class Declaration</h3>
+            <pre><span class="kw">accessModifier class</span> ClassName {
+    <span class="cmt">// fields (state)</span>
+    <span class="cmt">// constructors</span>
+    <span class="cmt">// methods (behaviour)</span>
+}</pre>
+          </div>
+          <div class="card">
+            <h3>Minimal Example</h3>
+            <pre><span class="kw">public class</span> Student {
+    String name;
+    <span class="kw">int</span> rollNo;
+}</pre>
+            <p>This declares a class with two fields. No objects exist yet — the
+            class is only a blueprint.</p>
+          </div>
+          <div class="card warn">
+            <h3>Naming Rules</h3>
+            <ul>
+              <li>Must be a valid Java identifier.</li>
+              <li>Cannot be a keyword.</li>
+              <li>Convention: <strong>PascalCase</strong>.</li>
+              <li>Public class name must match file name.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 6. CLASS MEMBERS ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Classes and Objects</span>
+        <h2>Class Members</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>What Can a Class Contain?</h3>
+            <table>
+              <thead>
+                <tr><th>Member Type</th><th>Purpose</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Fields (instance variables)</td><td>Store per-object state</td></tr>
+                <tr><td>Static variables</td><td>Store class-level state</td></tr>
+                <tr><td>Methods</td><td>Define behaviour</td></tr>
+                <tr><td>Constructors</td><td>Initialize objects</td></tr>
+                <tr><td>Static blocks</td><td>Class-level initialization</td></tr>
+                <tr><td>Instance initializer blocks</td><td>Instance-level initialization</td></tr>
+                <tr><td>Nested classes</td><td>Classes inside the class</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card">
+            <h3>Multiple Classes in One File</h3>
+            <p>Only one class may be <code>public</code>, and its name must match the
+            file name. Other classes are package-private.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Example — Full Class Skeleton</h3>
+            <pre><span class="kw">public class</span> Student {
+    <span class="cmt">// 1. Static variable</span>
+    <span class="kw">private static int</span> count = <span class="num">0</span>;
+
+    <span class="cmt">// 2. Instance variables</span>
+    <span class="kw">private</span> String name;
+    <span class="kw">private int</span> rollNo;
+
+    <span class="cmt">// 3. Static block</span>
+    <span class="kw">static</span> {
+        System.out.println(<span class="str">"Class loaded"</span>);
+    }
+
+    <span class="cmt">// 4. Constructor</span>
+    <span class="kw">public</span> Student(String name, <span class="kw">int</span> rollNo) {
+        <span class="kw">this</span>.name = name;
+        <span class="kw">this</span>.rollNo = rollNo;
+        count++;
+    }
+
+    <span class="cmt">// 5. Instance method</span>
+    <span class="kw">public void</span> display() {
+        System.out.println(name + <span class="str">" | "</span> + rollNo);
+    }
+
+    <span class="cmt">// 6. Static method</span>
+    <span class="kw">public static int</span> getCount() {
+        <span class="kw">return</span> count;
+    }
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 7. WHAT IS AN OBJECT ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Classes and Objects</span>
+        <h2>What Is an Object?</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>An object is a specific <strong>instance</strong> of a class — a concrete
+            entity created in memory with its own copy of the class's fields.</p>
+          </div>
+          <div class="card">
+            <h3>Creating Objects</h3>
+            <pre>Student s1 = <span class="kw">new</span> Student();
+s1.name = <span class="str">"Alice"</span>;
+s1.rollNo = <span class="num">101</span>;
+
+Student s2 = <span class="kw">new</span> Student();
+s2.name = <span class="str">"Bob"</span>;
+s2.rollNo = <span class="num">102</span>;
+
+System.out.println(s1.name); <span class="cmt">// Alice</span>
+System.out.println(s2.name); <span class="cmt">// Bob</span></pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>What Happens at <code>new</code></h3>
+            <ol>
+              <li>Memory is allocated on the heap for the object.</li>
+              <li>Fields are initialized to default values.</li>
+              <li>The constructor runs.</li>
+              <li>A reference to the new object is returned.</li>
+            </ol>
+          </div>
+          <div class="card warn">
+            <h3>Each Object Has Its Own Fields</h3>
+            <p><code>s1</code> and <code>s2</code> are distinct objects. Changing
+            <code>s1.name</code> does not affect <code>s2.name</code>.</p>
+          </div>
+          <div class="card danger">
+            <h3>Common Mistake</h3>
+            <pre>Student s;
+s.name = <span class="str">"Alice"</span>;
+<span class="cmt">// compile error: s might not be initialized</span></pre>
+            <p>You must create an object with <code>new</code> before using it.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 8. OBJECT REFERENCES AND NULL ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Classes and Objects</span>
+        <h2>Object References and <code>null</code></h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Reference Semantics</h3>
+            <p>Variables of a class type hold references, not the objects themselves.
+            Assigning one reference to another does not copy the object.</p>
+            <pre>Student a = <span class="kw">new</span> Student();
+Student b = a;         <span class="cmt">// b points to same object</span>
+b.name = <span class="str">"Zara"</span>;
+
+System.out.println(a.name); <span class="cmt">// Zara</span></pre>
+          </div>
+          <div class="card">
+            <h3>Visual Representation</h3>
+            <pre>a ──┐
+    ↓
+  [Student object]
+    ↑
+b ──┘</pre>
+            <p>Both <code>a</code> and <code>b</code> reference the same object on the
+            heap.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card warn">
+            <h3>Null Reference</h3>
+            <pre>Student s = <span class="kw">null</span>;
+s.display();
+<span class="cmt">// NullPointerException</span></pre>
+            <p>A <code>null</code> reference does not point to any object. Calling a
+            method on it throws <code>NullPointerException</code>.</p>
+          </div>
+          <div class="card danger">
+            <h3>Comparing References</h3>
+            <pre>Student a = <span class="kw">new</span> Student();
+Student b = <span class="kw">new</span> Student();
+
+System.out.println(a == b); <span class="cmt">// false — different objects</span>
+
+Student c = a;
+System.out.println(a == c); <span class="cmt">// true — same object</span></pre>
+            <p><code>==</code> compares references, not field values. This will be
+            revisited in the object identity section.</p>
+          </div>
+          <div class="card accent">
+            <h3>Garbage Collection</h3>
+            <p>When no references point to an object, it becomes eligible for garbage
+            collection. The JVM reclaims the memory automatically.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 9. CLASS VS OBJECT ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Classes and Objects</span>
+        <h2>Class vs Object</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Comparison Table</h3>
+            <table>
+              <thead>
+                <tr><th>Aspect</th><th>Class</th><th>Object</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Nature</td><td>Blueprint / template</td><td>Instance / concrete entity</td></tr>
+                <tr><td>Existence</td><td>Compile-time concept</td><td>Runtime entity</td></tr>
+                <tr><td>Memory</td><td>No memory for fields</td><td>Heap allocation</td></tr>
+                <tr><td>Count</td><td>One definition</td><td>Many instances possible</td></tr>
+                <tr><td>Example</td><td><code>Student</code></td><td><code>s1</code>, <code>s2</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card warn">
+            <h3>Analogy</h3>
+            <p>A class is like a house blueprint. An object is an actual house built
+            from that blueprint. You can build many houses from one blueprint, and
+            each house can have different paint colours and furniture.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Complete Example — Student</h3>
+            <pre><span class="kw">public class</span> Student {
+    <span class="kw">private</span> String name;
+    <span class="kw">private int</span> rollNo;
+    <span class="kw">private double</span> gpa;
+
+    <span class="kw">public</span> Student(String name, <span class="kw">int</span> rollNo,
+                   <span class="kw">double</span> gpa) {
+        <span class="kw">this</span>.name = name;
+        <span class="kw">this</span>.rollNo = rollNo;
+        <span class="kw">this</span>.gpa = gpa;
+    }
+
+    <span class="kw">public void</span> display() {
+        System.out.println(name + <span class="str">" | "</span> + rollNo
+            + <span class="str">" | GPA: "</span> + gpa);
+    }
+
+    <span class="kw">public boolean</span> isHonours() {
+        <span class="kw">return</span> gpa >= <span class="num">8.5</span>;
+    }
+}
+
+<span class="cmt">// Usage</span>
+Student s1 = <span class="kw">new</span> Student(<span class="str">"Alice"</span>, <span class="num">101</span>, <span class="num">9.1</span>);
+Student s2 = <span class="kw">new</span> Student(<span class="str">"Bob"</span>, <span class="num">102</span>, <span class="num">7.8</span>);
+
+s1.display(); <span class="cmt">// Alice | 101 | GPA: 9.1</span>
+s2.display(); <span class="cmt">// Bob | 102 | GPA: 7.8</span>
+
+System.out.println(s1.isHonours()); <span class="cmt">// true</span>
+System.out.println(s2.isHonours()); <span class="cmt">// false</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 10. SECTION DIVIDER — INSTANCE VS STATIC ==================== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">02</div>
+      <h1>Instance vs Static Variables</h1>
+      <div class="rule"></div>
+      <p>Not all state belongs to individual objects. Some state belongs to the class
+      itself. Java distinguishes these with the <code>static</code> keyword.</p>
+    </div>
+  </section>
+
+  <!-- ==================== 11. INSTANCE VARIABLES ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Instance vs Static</span>
+        <h2>Instance Variables</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>Instance variables are fields declared without <code>static</code>. Each
+            object gets its own copy.</p>
+            <pre><span class="kw">public class</span> Student {
+    String name;    <span class="cmt">// instance variable</span>
+    <span class="kw">int</span> rollNo;      <span class="cmt">// instance variable</span>
+}</pre>
+          </div>
+          <div class="card">
+            <h3>Per-Object Storage</h3>
+            <pre>Student a = <span class="kw">new</span> Student();
+Student b = <span class="kw">new</span> Student();
+
+a.name = <span class="str">"Alice"</span>;
+b.name = <span class="str">"Bob"</span>;
+
+System.out.println(a.name); <span class="cmt">// Alice</span>
+System.out.println(b.name); <span class="cmt">// Bob</span></pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Key Characteristics</h3>
+            <ul>
+              <li>Stored on the heap as part of the object.</li>
+              <li>One copy per object.</li>
+              <li>Initialized to default values.</li>
+              <li>Accessed through <code>this</code> or an object reference.</li>
+              <li>Lifetime = lifetime of the object.</li>
+            </ul>
+          </div>
+          <div class="card warn">
+            <h3>When to Use Instance Variables</h3>
+            <ul>
+              <li>The value describes a specific object.</li>
+              <li>Different objects should be able to hold different values.</li>
+              <li>The value changes as the object's state changes.</li>
+            </ul>
+          </div>
+          <div class="card danger">
+            <h3>Encapsulation Best Practice</h3>
+            <p>Make instance variables <code>private</code>. Expose behaviour through
+            public methods rather than allowing direct field access.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 12. STATIC VARIABLES ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Instance vs Static</span>
+        <h2>Static Variables</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>Static variables are fields declared with <code>static</code>. There is
+            exactly one copy shared by all objects of the class.</p>
+            <pre><span class="kw">public class</span> Student {
+    String name;
+    <span class="kw">static int</span> count = <span class="num">0</span>;  <span class="cmt">// shared</span>
+
+    <span class="kw">public</span> Student(String name) {
+        <span class="kw">this</span>.name = name;
+        count++;
+    }
+}</pre>
+          </div>
+          <div class="card">
+            <h3>Usage</h3>
+            <pre>Student a = <span class="kw">new</span> Student(<span class="str">"Alice"</span>);
+Student b = <span class="kw">new</span> Student(<span class="str">"Bob"</span>);
+Student c = <span class="kw">new</span> Student(<span class="str">"Charlie"</span>);
+
+System.out.println(Student.count); <span class="cmt">// 3</span></pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Key Characteristics</h3>
+            <ul>
+              <li>Stored in the class area of memory.</li>
+              <li>One copy per class.</li>
+              <li>Initialized to default values when the class is loaded.</li>
+              <li>Accessed through the class name (preferred).</li>
+              <li>Lifetime = lifetime of the class.</li>
+            </ul>
+          </div>
+          <div class="card warn">
+            <h3>Common Uses</h3>
+            <ul>
+              <li>Counting instances of a class.</li>
+              <li>Shared configuration values.</li>
+              <li>Constants (<code>static final</code>).</li>
+              <li>Caches shared across all objects.</li>
+            </ul>
+          </div>
+          <div class="card danger">
+            <h3>Thread Safety Warning</h3>
+            <p>Static variables are not thread-safe by default. Concurrent modification
+            can corrupt shared state. We will cover synchronization in a later unit.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 13. INSTANCE VS STATIC — COMPARISON ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Instance vs Static</span>
+        <h2>Instance vs Static — Comparison</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Full Comparison</h3>
+            <table>
+              <thead>
+                <tr><th>Aspect</th><th>Instance Variable</th><th>Static Variable</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Declared with</td><td>No <code>static</code></td><td><code>static</code></td></tr>
+                <tr><td>Copies</td><td>One per object</td><td>One per class</td></tr>
+                <tr><td>Memory</td><td>Heap (part of object)</td><td>Class area</td></tr>
+                <tr><td>Accessed via</td><td>Object reference</td><td>Class name</td></tr>
+                <tr><td>Lifetime</td><td>Until object collected</td><td>Until class unloaded</td></tr>
+                <tr><td>Initialization</td><td>When object created</td><td>When class loaded</td></tr>
+                <tr><td>Common use</td><td>Object state</td><td>Counters, constants</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Worked Example — Employee</h3>
+            <pre><span class="kw">public class</span> Employee {
+    <span class="kw">private</span> String name;
+    <span class="kw">private static int</span> totalEmployees = <span class="num">0</span>;
+    <span class="kw">private static final double</span> BONUS_RATE = <span class="num">0.10</span>;
+
+    <span class="kw">public</span> Employee(String name) {
+        <span class="kw">this</span>.name = name;
+        totalEmployees++;
+    }
+
+    <span class="kw">public double</span> calculateBonus(<span class="kw">double</span> salary) {
+        <span class="kw">return</span> salary * BONUS_RATE;
+    }
+
+    <span class="kw">public static int</span> getTotalEmployees() {
+        <span class="kw">return</span> totalEmployees;
+    }
+
+    <span class="kw">public</span> String getName() { <span class="kw">return</span> name; }
+}</pre>
+            <pre>Employee e1 = <span class="kw">new</span> Employee(<span class="str">"Alice"</span>);
+Employee e2 = <span class="kw">new</span> Employee(<span class="str">"Bob"</span>);
+
+System.out.println(Employee.getTotalEmployees()); <span class="cmt">// 2</span>
+System.out.println(e1.calculateBonus(<span class="num">50000</span>));    <span class="cmt">// 5000.0</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 14. DEFAULT VALUES ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Instance vs Static</span>
+        <h2>Default Values</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Instance and Static Variables Have Defaults</h3>
+            <table>
+              <thead>
+                <tr><th>Type</th><th>Default</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code></td><td><code>0</code></td></tr>
+                <tr><td><code>float</code>, <code>double</code></td><td><code>0.0</code></td></tr>
+                <tr><td><code>char</code></td><td><code>'\u0000'</code></td></tr>
+                <tr><td><code>boolean</code></td><td><code>false</code></td></tr>
+                <tr><td>Reference types</td><td><code>null</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card warn">
+            <h3>Local Variables Do NOT Have Defaults</h3>
+            <pre><span class="kw">void</span> method() {
+    <span class="kw">int</span> localVar;
+    <span class="cmt">// System.out.println(localVar); // error</span>
+    localVar = <span class="num">10</span>; <span class="cmt">// must initialize first</span>
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Demonstration</h3>
+            <pre><span class="kw">public class</span> Defaults {
+    <span class="kw">int</span> i;
+    <span class="kw">double</span> d;
+    <span class="kw">char</span> c;
+    <span class="kw">boolean</span> b;
+    String s;
+    <span class="kw">static int</span> staticInt;
+
+    <span class="kw">public static void</span> main(String[] args) {
+        Defaults obj = <span class="kw">new</span> Defaults();
+
+        System.out.println(<span class="str">"int: "</span> + obj.i);        <span class="cmt">// 0</span>
+        System.out.println(<span class="str">"double: "</span> + obj.d);     <span class="cmt">// 0.0</span>
+        System.out.println(<span class="str">"char: ["</span> + obj.c + <span class="str">"]"</span>); <span class="cmt">// [ ]</span>
+        System.out.println(<span class="str">"boolean: "</span> + obj.b);    <span class="cmt">// false</span>
+        System.out.println(<span class="str">"String: "</span> + obj.s);     <span class="cmt">// null</span>
+        System.out.println(<span class="str">"static: "</span> + staticInt);  <span class="cmt">// 0</span>
+    }
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 15. SECTION DIVIDER — ENCAPSULATION ==================== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">03</div>
+      <h1>Encapsulation</h1>
+      <div class="rule"></div>
+      <p>Encapsulation is the practice of hiding internal state and exposing only
+      what is necessary through a controlled interface. It is the foundation of
+      robust class design.</p>
+    </div>
+  </section>
+
+  <!-- ==================== 16. WHAT IS ENCAPSULATION ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Encapsulation</span>
+        <h2>What Is Encapsulation?</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>Encapsulation is the practice of hiding the internal state of an object
+            and exposing only what is necessary through a controlled interface. It is
+            one of the four pillars of object-oriented programming.</p>
+          </div>
+          <div class="card">
+            <h3>How Java Supports It</h3>
+            <ul>
+              <li><strong>Access modifiers:</strong> <code>private</code>, <code>public</code>, <code>protected</code>, default.</li>
+              <li><strong>Getters and setters:</strong> Controlled access to fields.</li>
+              <li><strong>Packages:</strong> Package-private access for internal collaboration.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>The Encapsulation Pattern</h3>
+            <ol>
+              <li>Declare fields as <code>private</code>.</li>
+              <li>Provide <code>public</code> getters and setters as needed.</li>
+              <li>Validate inputs in setters and constructors.</li>
+              <li>Omit setters for fields that should not change.</li>
+              <li>Use <code>private</code> for helper methods.</li>
+            </ol>
+          </div>
+          <div class="card warn">
+            <h3>Data Hiding vs Encapsulation</h3>
+            <ul>
+              <li><strong>Data hiding:</strong> making fields private.</li>
+              <li><strong>Encapsulation:</strong> the broader practice of bundling data and behaviour, controlling access, and exposing a well-designed interface.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 17. ENCAPSULATION IN PRACTICE ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Encapsulation</span>
+        <h2>Encapsulation in Practice — BankAccount</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>BankAccount.java</h3>
+            <pre><span class="kw">public class</span> BankAccount {
+    <span class="kw">private final</span> String accountNumber;
+    <span class="kw">private</span> String holderName;
+    <span class="kw">private double</span> balance;
+
+    <span class="kw">public</span> BankAccount(String accountNumber,
+                       String holderName,
+                       <span class="kw">double</span> initialBalance) {
+        <span class="kw">if</span> (accountNumber == <span class="kw">null</span>
+            || accountNumber.isEmpty()) {
+            <span class="kw">throw new</span> IllegalArgumentException(
+                <span class="str">"Account number required"</span>);
+        }
+        <span class="kw">if</span> (initialBalance &lt; <span class="num">0</span>) {
+            <span class="kw">throw new</span> IllegalArgumentException(
+                <span class="str">"Initial balance cannot be negative"</span>);
+        }
+        <span class="kw">this</span>.accountNumber = accountNumber;
+        <span class="kw">this</span>.holderName = holderName;
+        <span class="kw">this</span>.balance = initialBalance;
+    }
+
+    <span class="kw">public</span> String getAccountNumber() {
+        <span class="kw">return</span> accountNumber;
+    }
+
+    <span class="kw">public double</span> getBalance() {
+        <span class="kw">return</span> balance;
+    }
+
+    <span class="kw">public void</span> setHolderName(String holderName) {
+        <span class="kw">if</span> (holderName != <span class="kw">null</span>
+            &amp;&amp; !holderName.isEmpty()) {
+            <span class="kw">this</span>.holderName = holderName;
+        }
+    }
+
+    <span class="kw">public void</span> deposit(<span class="kw">double</span> amount) {
+        <span class="kw">if</span> (amount &lt;= <span class="num">0</span>) {
+            <span class="kw">throw new</span> IllegalArgumentException(
+                <span class="str">"Deposit must be positive"</span>);
+        }
+        balance += amount;
+    }
+
+    <span class="kw">public void</span> withdraw(<span class="kw">double</span> amount) {
+        <span class="kw">if</span> (amount &lt;= <span class="num">0</span>) {
+            <span class="kw">throw new</span> IllegalArgumentException(
+                <span class="str">"Withdrawal must be positive"</span>);
+        }
+        <span class="kw">if</span> (amount &gt; balance) {
+            <span class="kw">throw new</span> IllegalStateException(
+                <span class="str">"Insufficient balance"</span>);
+        }
+        balance -= amount;
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card warn">
+            <h3>What This Demonstrates</h3>
+            <ul>
+              <li>Fields are <code>private</code> — no direct access from outside.</li>
+              <li>Constructor validates inputs.</li>
+              <li>Setters validate before assigning.</li>
+              <li>Methods enforce business rules (no negative balance).</li>
+              <li><code>accountNumber</code> is <code>final</code> — read-only after construction.</li>
+            </ul>
+          </div>
+          <div class="card danger">
+            <h3>If Fields Were Public</h3>
+            <pre>BankAccount acc = <span class="kw">new</span> BankAccount(...);
+acc.balance = -<span class="num">999999</span>;
+<span class="cmt">// No validation — invariant broken</span></pre>
+            <p>Encapsulation prevents this class of bug entirely.</p>
+          </div>
+          <div class="card accent">
+            <h3>Usage</h3>
+            <pre>BankAccount acc = <span class="kw">new</span> BankAccount(
+    <span class="str">"ACC1001"</span>, <span class="str">"Alice"</span>, <span class="num">1000</span>);
+
+acc.deposit(<span class="num">500</span>);
+acc.withdraw(<span class="num">200</span>);
+System.out.println(acc.getBalance());
+<span class="cmt">// 1300.0</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 18. GETTERS AND SETTERS ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Encapsulation</span>
+        <h2>Getters and Setters</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Naming Conventions</h3>
+            <table>
+              <thead>
+                <tr><th>Field Type</th><th>Getter</th><th>Setter</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>String name</code></td><td><code>getName()</code></td><td><code>setName(String)</code></td></tr>
+                <tr><td><code>int age</code></td><td><code>getAge()</code></td><td><code>setAge(int)</code></td></tr>
+                <tr><td><code>boolean active</code></td><td><code>isActive()</code></td><td><code>setActive(boolean)</code></td></tr>
+                <tr><td><code>double gpa</code></td><td><code>getGpa()</code></td><td><code>setGpa(double)</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card">
+            <h3>Read-Only Property</h3>
+            <p>Provide only a getter for fields that should not change after
+            construction.</p>
+            <pre><span class="kw">public class</span> Student {
+    <span class="kw">private final int</span> rollNo;
+
+    <span class="kw">public</span> Student(<span class="kw">int</span> rollNo) {
+        <span class="kw">this</span>.rollNo = rollNo;
+    }
+
+    <span class="kw">public int</span> getRollNo() {
+        <span class="kw">return</span> rollNo;
+    }
+    <span class="cmt">// no setter</span>
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Setter With Validation</h3>
+            <pre><span class="kw">public class</span> Student {
+    <span class="kw">private double</span> gpa;
+
+    <span class="kw">public double</span> getGpa() {
+        <span class="kw">return</span> gpa;
+    }
+
+    <span class="kw">public void</span> setGpa(<span class="kw">double</span> gpa) {
+        <span class="kw">if</span> (gpa &gt;= <span class="num">0</span> &amp;&amp; gpa &lt;= <span class="num">10</span>) {
+            <span class="kw">this</span>.gpa = gpa;
+        } <span class="kw">else</span> {
+            <span class="kw">throw new</span> IllegalArgumentException(
+                <span class="str">"GPA must be between 0 and 10"</span>);
+        }
+    }
+}</pre>
+          </div>
+          <div class="card warn">
+            <h3>Write-Only Property (Rare)</h3>
+            <pre><span class="kw">public class</span> User {
+    <span class="kw">private</span> String password;
+
+    <span class="kw">public void</span> setPassword(String password) {
+        <span class="kw">this</span>.password = password;
+    }
+    <span class="cmt">// no getter</span>
+}</pre>
+            <p>Typically used for sensitive fields like passwords.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 19. BENEFITS OF ENCAPSULATION ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Encapsulation</span>
+        <h2>Benefits of Encapsulation</h2>
+      </header>
+      <div class="cols-3">
+        <div class="card accent">
+          <h3>Data Hiding</h3>
+          <p>Internal state cannot be modified arbitrarily. Clients must go through
+          the public interface.</p>
+        </div>
+        <div class="card accent">
+          <h3>Validation</h3>
+          <p>Setters and constructors can reject invalid input before it corrupts
+          state.</p>
+        </div>
+        <div class="card accent">
+          <h3>Invariants</h3>
+          <p>The class can enforce rules such as "balance never negative" or "name
+          never empty".</p>
+        </div>
+        <div class="card accent">
+          <h3>Flexibility</h3>
+          <p>Internal representation can change without breaking client code, as
+          long as the public methods stay the same.</p>
+        </div>
+        <div class="card accent">
+          <h3>Maintainability</h3>
+          <p>Changes are localized to the class. Bugs are easier to trace and
+          fix.</p>
+        </div>
+        <div class="card accent">
+          <h3>Security</h3>
+          <p>The attack surface is limited to the public methods. Private state
+          cannot be tampered with.</p>
+        </div>
+      </div>
+      <div class="card warn" style="margin-top:1.8vh">
+        <h3>Rule of Thumb</h3>
+        <p>Start with the most restrictive access that works. Widen only when a
+        concrete need appears. Every public method is a contract you must maintain.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 20. SECTION DIVIDER — CONSTRUCTORS ==================== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">04</div>
+      <h1>Constructors</h1>
+      <div class="rule"></div>
+      <p>A constructor is a special method that runs when an object is created. It
+      is how you guarantee an object starts in a valid state.</p>
+    </div>
+  </section>
+
+  <!-- ==================== 21. WHAT IS A CONSTRUCTOR ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Constructors</span>
+        <h2>What Is a Constructor?</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>A constructor is a special method invoked automatically when an
+            object is created with <code>new</code>. Its purpose is to initialize
+            the new object's fields.</p>
+          </div>
+          <div class="card accent">
+            <h3>Syntax</h3>
+            <pre><span class="kw">public class</span> Student {
+    String name;
+
+    <span class="cmt">// constructor</span>
+    <span class="kw">public</span> Student() {
+        name = <span class="str">"Unknown"</span>;
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Rules</h3>
+            <ol>
+              <li>Name must match the class name exactly.</li>
+              <li>No return type — not even <code>void</code>.</li>
+              <li>Can take parameters.</li>
+              <li>Can be overloaded.</li>
+              <li>Can use any access modifier.</li>
+              <li>If no constructor is defined, Java provides a default no-argument constructor.</li>
+              <li>If any constructor is defined, the default is no longer provided.</li>
+              <li>Constructors are not inherited.</li>
+            </ol>
+          </div>
+          <div class="card warn">
+            <h3>Constructor vs Method</h3>
+            <table>
+              <thead>
+                <tr><th>Aspect</th><th>Constructor</th><th>Method</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Name</td><td>Same as class</td><td>Any valid identifier</td></tr>
+                <tr><td>Return type</td><td>None</td><td>Required</td></tr>
+                <tr><td>Called</td><td>Automatically on <code>new</code></td><td>Explicitly</td></tr>
+                <tr><td>Purpose</td><td>Initialize object</td><td>Perform behaviour</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 22. DEFAULT CONSTRUCTOR ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Constructors</span>
+        <h2>Default Constructor</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Two Meanings</h3>
+            <ol>
+              <li>The no-argument constructor Java provides automatically if you
+              write none.</li>
+              <li>Any no-argument constructor you write yourself.</li>
+            </ol>
+          </div>
+          <div class="card accent">
+            <h3>Compiler-Provided</h3>
+            <pre><span class="kw">public class</span> Student {
+    String name;
+    <span class="kw">int</span> rollNo;
+}
+
+<span class="cmt">// Equivalent to:</span>
+<span class="kw">public class</span> Student {
+    String name;
+    <span class="kw">int</span> rollNo;
+
+    <span class="kw">public</span> Student() { }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card warn">
+            <h3>Important Rule</h3>
+            <p>If you define <strong>any</strong> constructor explicitly, the compiler
+            no longer provides the default one. You must write a no-argument
+            constructor yourself if you need one.</p>
+          </div>
+          <div class="card danger">
+            <h3>Common Bug</h3>
+            <pre><span class="kw">public class</span> Student {
+    String name;
+
+    <span class="kw">public</span> Student(String n) {
+        name = n;
+    }
+}
+
+<span class="cmt">// elsewhere:</span>
+Student s = <span class="kw">new</span> Student();
+<span class="cmt">// compile error: no no-arg constructor</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 23. PARAMETERIZED CONSTRUCTOR ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Constructors</span>
+        <h2>Parameterized Constructor</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>A constructor that accepts arguments, allowing the caller to set
+            initial values for the object's fields at creation time.</p>
+            <pre><span class="kw">public class</span> Student {
+    String name;
+    <span class="kw">int</span> rollNo;
+    <span class="kw">double</span> gpa;
+
+    <span class="kw">public</span> Student(String name, <span class="kw">int</span> rollNo,
+                   <span class="kw">double</span> gpa) {
+        <span class="kw">this</span>.name = name;
+        <span class="kw">this</span>.rollNo = rollNo;
+        <span class="kw">this</span>.gpa = gpa;
+    }
+}</pre>
+          </div>
+          <div class="card">
+            <h3>Usage</h3>
+            <pre>Student s = <span class="kw">new</span> Student(<span class="str">"Alice"</span>, <span class="num">101</span>, <span class="num">9.1</span>);
+System.out.println(s.name);   <span class="cmt">// Alice</span>
+System.out.println(s.rollNo); <span class="cmt">// 101</span>
+System.out.println(s.gpa);    <span class="cmt">// 9.1</span></pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card warn">
+            <h3>Why Parameterized Constructors Matter</h3>
+            <ul>
+              <li>Guarantee an object is fully initialized.</li>
+              <li>Prevent partially constructed objects.</li>
+              <li>Make the class easier to use correctly.</li>
+              <li>Reduce the need for multiple setter calls.</li>
+            </ul>
+          </div>
+          <div class="card accent">
+            <h3>Validation in Constructor</h3>
+            <pre><span class="kw">public</span> Student(String name, <span class="kw">int</span> rollNo,
+               <span class="kw">double</span> gpa) {
+    <span class="kw">if</span> (name == <span class="kw">null</span> || name.isEmpty()) {
+        <span class="kw">throw new</span> IllegalArgumentException(
+            <span class="str">"Name required"</span>);
+    }
+    <span class="kw">if</span> (rollNo &lt;= <span class="num">0</span>) {
+        <span class="kw">throw new</span> IllegalArgumentException(
+            <span class="str">"Roll number must be positive"</span>);
+    }
+    <span class="kw">if</span> (gpa &lt; <span class="num">0</span> || gpa &gt; <span class="num">10</span>) {
+        <span class="kw">throw new</span> IllegalArgumentException(
+            <span class="str">"GPA must be between 0 and 10"</span>);
+    }
+    <span class="kw">this</span>.name = name;
+    <span class="kw">this</span>.rollNo = rollNo;
+    <span class="kw">this</span>.gpa = gpa;
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 24. COPY CONSTRUCTOR ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Constructors</span>
+        <h2>Copy Constructor</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>A constructor that takes an object of the same class and copies its
+            fields. Java does not provide a default copy constructor; you must write
+            one.</p>
+            <pre><span class="kw">public class</span> Student {
+    <span class="kw">private</span> String name;
+    <span class="kw">private int</span> rollNo;
+    <span class="kw">private double</span> gpa;
+
+    <span class="kw">public</span> Student(String name, <span class="kw">int</span> rollNo,
+                   <span class="kw">double</span> gpa) {
+        <span class="kw">this</span>.name = name;
+        <span class="kw">this</span>.rollNo = rollNo;
+        <span class="kw">this</span>.gpa = gpa;
+    }
+
+    <span class="cmt">// Copy constructor</span>
+    <span class="kw">public</span> Student(Student other) {
+        <span class="kw">this</span>.name = other.name;
+        <span class="kw">this</span>.rollNo = other.rollNo;
+        <span class="kw">this</span>.gpa = other.gpa;
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Usage</h3>
+            <pre>Student s1 = <span class="kw">new</span> Student(<span class="str">"Alice"</span>, <span class="num">101</span>, <span class="num">9.1</span>);
+Student s2 = <span class="kw">new</span> Student(s1); <span class="cmt">// copy</span>
+
+System.out.println(s1 == s2);        <span class="cmt">// false</span>
+System.out.println(s1.equals(s2));   <span class="cmt">// depends on equals</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>Why Use a Copy Constructor?</h3>
+            <ul>
+              <li>Create an independent copy of an object.</li>
+              <li>Avoid the problems of reference sharing.</li>
+              <li>Control how copying is performed (shallow vs deep).</li>
+            </ul>
+          </div>
+          <div class="card danger">
+            <h3>Note</h3>
+            <p>A copy constructor creates a new object with a distinct identity. The
+            references are different, but the field values are the same.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 25. SHALLOW VS DEEP COPY ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Constructors</span>
+        <h2>Shallow Copy vs Deep Copy</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Shallow Copy</h3>
+            <p>Copies field values. For reference fields, both objects share the
+            same referenced object.</p>
+            <pre><span class="kw">public class</span> Student {
+    String name;
+    <span class="kw">int</span>[] marks;
+
+    <span class="kw">public</span> Student(Student other) {
+        <span class="kw">this</span>.name = other.name;
+        <span class="kw">this</span>.marks = other.marks;
+        <span class="cmt">// shares the array</span>
+    }
+}</pre>
+            <p><strong>Problem:</strong> modifying <code>marks</code> in the copy
+            affects the original.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Deep Copy</h3>
+            <p>Recursively copies referenced objects so that the copy is fully
+            independent.</p>
+            <pre><span class="kw">public</span> Student(Student other) {
+    <span class="kw">this</span>.name = other.name;
+    <span class="kw">this</span>.marks = <span class="kw">new int</span>[other.marks.length];
+    System.arraycopy(other.marks, <span class="num">0</span>,
+        <span class="kw">this</span>.marks, <span class="num">0</span>, other.marks.length);
+}</pre>
+          </div>
+          <div class="card warn">
+            <h3>Rule of Thumb</h3>
+            <ul>
+              <li>Immutable fields (<code>String</code>, wrappers): shallow copy is sufficient.</li>
+              <li>Mutable fields (arrays, collections, mutable objects): deep copy is usually required.</li>
+            </ul>
+          </div>
+          <div class="card danger">
+            <h3>Bug Pattern</h3>
+            <pre>Student s1 = <span class="kw">new</span> Student(<span class="str">"A"</span>, <span class="kw">new int</span>[]{<span class="num">1</span>,<span class="num">2</span>});
+Student s2 = <span class="kw">new</span> Student(s1); <span class="cmt">// shallow</span>
+
+s2.marks[<span class="num">0</span>] = <span class="num">99</span>;
+System.out.println(s1.marks[<span class="num">0</span>]); <span class="cmt">// 99 — unexpected!</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 26. CONSTRUCTOR OVERLOADING ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Constructors</span>
+        <h2>Constructor Overloading</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>Defining multiple constructors with different parameter lists. Java
+            chooses the appropriate one based on the arguments at the call site.</p>
+          </div>
+          <div class="card accent">
+            <h3>Example — Book</h3>
+            <pre><span class="kw">public class</span> Book {
+    String title;
+    String author;
+    <span class="kw">double</span> price;
+
+    <span class="cmt">// 1. No-argument</span>
+    <span class="kw">public</span> Book() {
+        <span class="kw">this</span>(<span class="str">"Untitled"</span>, <span class="str">"Unknown"</span>, <span class="num">0.0</span>);
+    }
+
+    <span class="cmt">// 2. Title only</span>
+    <span class="kw">public</span> Book(String title) {
+        <span class="kw">this</span>(title, <span class="str">"Unknown"</span>, <span class="num">0.0</span>);
+    }
+
+    <span class="cmt">// 3. Full</span>
+    <span class="kw">public</span> Book(String title, String author,
+                <span class="kw">double</span> price) {
+        <span class="kw">this</span>.title = title;
+        <span class="kw">this</span>.author = author;
+        <span class="kw">this</span>.price = price;
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Usage</h3>
+            <pre>Book b1 = <span class="kw">new</span> Book();
+Book b2 = <span class="kw">new</span> Book(<span class="str">"Effective Java"</span>);
+Book b3 = <span class="kw">new</span> Book(<span class="str">"Clean Code"</span>,
+                    <span class="str">"Robert Martin"</span>, <span class="num">799.00</span>);</pre>
+          </div>
+          <div class="card warn">
+            <h3>Rules</h3>
+            <ul>
+              <li>Must differ in number, type, or order of parameters.</li>
+              <li>Return type is irrelevant (constructors have none).</li>
+              <li>Access modifier alone is not sufficient.</li>
+              <li>The compiler resolves the correct overload at compile time.</li>
+            </ul>
+          </div>
+          <div class="card danger">
+            <h3>Invalid Overloading</h3>
+            <pre><span class="kw">public</span> Book(String t) { }
+<span class="cmt">// public Book(String s) { } // error: same signature</span>
+<span class="cmt">// private Book(String t) { } // error: only access differs</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 27. CONSTRUCTOR CHAINING ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Constructors</span>
+        <h2>Constructor Chaining with <code>this(...)</code></h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>One constructor calls another constructor of the same class using
+            <code>this(...)</code>. It must be the <strong>first statement</strong> in
+            the constructor body.</p>
+          </div>
+          <div class="card accent">
+            <h3>Complete Example — Employee</h3>
+            <pre><span class="kw">public class</span> Employee {
+    <span class="kw">private</span> String name;
+    <span class="kw">private</span> String department;
+    <span class="kw">private double</span> salary;
+
+    <span class="kw">public</span> Employee() {
+        <span class="kw">this</span>(<span class="str">"Unknown"</span>, <span class="str">"Unassigned"</span>, <span class="num">0.0</span>);
+    }
+
+    <span class="kw">public</span> Employee(String name, String department) {
+        <span class="kw">this</span>(name, department, <span class="num">30000.0</span>);
+    }
+
+    <span class="kw">public</span> Employee(String name, String department,
+                    <span class="kw">double</span> salary) {
+        <span class="kw">if</span> (name == <span class="kw">null</span> || name.isEmpty()) {
+            <span class="kw">throw new</span> IllegalArgumentException(
+                <span class="str">"Name required"</span>);
+        }
+        <span class="kw">if</span> (salary &lt; <span class="num">0</span>) {
+            <span class="kw">throw new</span> IllegalArgumentException(
+                <span class="str">"Salary cannot be negative"</span>);
+        }
+        <span class="kw">this</span>.name = name;
+        <span class="kw">this</span>.department = department;
+        <span class="kw">this</span>.salary = salary;
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card warn">
+            <h3>Why Chain?</h3>
+            <ul>
+              <li>Centralizes initialization logic in one place.</li>
+              <li>Avoids duplicated validation code.</li>
+              <li>Makes adding new fields easier.</li>
+              <li>Reduces the chance of inconsistent initialization.</li>
+            </ul>
+          </div>
+          <div class="card danger">
+            <h3>Rules</h3>
+            <ul>
+              <li><code>this(...)</code> must be the first statement.</li>
+              <li>Only one <code>this(...)</code> call per constructor.</li>
+              <li>Do not create cycles (A calls B, B calls A).</li>
+              <li>Cannot appear together with <code>super(...)</code> in the same constructor.</li>
+            </ul>
+            <pre><span class="cmt">// Invalid</span>
+<span class="kw">public</span> Book() {
+    title = <span class="str">"X"</span>;
+    <span class="kw">this</span>(<span class="str">"Y"</span>); <span class="cmt">// error: not first</span>
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 28. PRIVATE CONSTRUCTORS AND VALIDATION ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Constructors</span>
+        <h2>Private Constructors and Validation</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Private Constructors</h3>
+            <p>A private constructor prevents external instantiation. Useful for:</p>
+            <ul>
+              <li>Utility classes (all static methods).</li>
+              <li>Singletons.</li>
+              <li>Factory methods.</li>
+            </ul>
+            <pre><span class="kw">public final class</span> MathUtil {
+    <span class="kw">private</span> MathUtil() {
+        <span class="cmt">// prevent instantiation</span>
+    }
+
+    <span class="kw">public static int</span> square(<span class="kw">int</span> n) {
+        <span class="kw">return</span> n * n;
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Validation in Constructors</h3>
+            <p>Constructors are the right place to validate inputs and enforce
+            invariants.</p>
+            <pre><span class="kw">public class</span> BankAccount {
+    <span class="kw">private final</span> String accountNumber;
+    <span class="kw">private double</span> balance;
+
+    <span class="kw">public</span> BankAccount(String accountNumber,
+                       <span class="kw">double</span> initialBalance) {
+        <span class="kw">if</span> (accountNumber == <span class="kw">null</span>
+            || accountNumber.isEmpty()) {
+            <span class="kw">throw new</span> IllegalArgumentException(
+                <span class="str">"Account number required"</span>);
+        }
+        <span class="kw">if</span> (initialBalance &lt; <span class="num">0</span>) {
+            <span class="kw">throw new</span> IllegalArgumentException(
+                <span class="str">"Initial balance cannot be negative"</span>);
+        }
+        <span class="kw">this</span>.accountNumber = accountNumber;
+        <span class="kw">this</span>.balance = initialBalance;
+    }
+}</pre>
+          </div>
+          <div class="card warn">
+            <h3>Why Validate Here?</h3>
+            <p>If the constructor rejects invalid input, no object can exist in an
+            invalid state. This is the strongest form of invariant enforcement.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 29. SECTION DIVIDER — THIS ==================== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">05</div>
+      <h1>The <code>this</code> Keyword</h1>
+      <div class="rule"></div>
+      <p>Inside any instance method or constructor, <code>this</code> is a reference
+      to the current object. It disambiguates names, enables chaining, and
+      clarifies intent.</p>
+    </div>
+  </section>
+
+  <!-- ==================== 30. THIS — OVERVIEW AND CURRENT OBJECT ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">this</span>
+        <h2>Referring to the Current Object</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>What Is <code>this</code>?</h3>
+            <p><code>this</code> is an implicit reference to the object on which the
+            method was called. It is available inside every instance method and
+            constructor (but not in static methods).</p>
+          </div>
+          <div class="card">
+            <h3>Implicit vs Explicit</h3>
+            <pre><span class="kw">public class</span> Student {
+    String name;
+
+    <span class="kw">void</span> display() {
+        System.out.println(name);
+        <span class="cmt">// same as:</span>
+        System.out.println(<span class="kw">this</span>.name);
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card warn">
+            <h3>Scope of <code>this</code></h3>
+            <table>
+              <thead>
+                <tr><th>Context</th><th>Available?</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Instance method</td><td>Yes</td></tr>
+                <tr><td>Constructor</td><td>Yes</td></tr>
+                <tr><td>Instance initializer block</td><td>Yes</td></tr>
+                <tr><td>Static method</td><td>No</td></tr>
+                <tr><td>Static block</td><td>No</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card danger">
+            <h3>Compile Error</h3>
+            <pre><span class="kw">public class</span> Demo {
+    <span class="kw">static void</span> method() {
+        System.out.println(<span class="kw">this</span>);
+        <span class="cmt">// compile error</span>
+    }
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 31. THIS — RESOLVING NAME CONFLICTS ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">this</span>
+        <h2>Resolving Field / Parameter Name Conflicts</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card danger">
+            <h3>Without <code>this</code></h3>
+            <pre><span class="kw">public class</span> Student {
+    String name;
+
+    <span class="kw">public</span> Student(String name) {
+        name = name; <span class="cmt">// BUG: parameter to itself</span>
+    }
+}
+
+<span class="cmt">// s.name remains null</span></pre>
+            <p>The parameter <code>name</code> shadows the field <code>name</code>. The
+            assignment does nothing useful.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>With <code>this</code></h3>
+            <pre><span class="kw">public class</span> Student {
+    String name;
+
+    <span class="kw">public</span> Student(String name) {
+        <span class="kw">this</span>.name = name; <span class="cmt">// field = parameter</span>
+    }
+}</pre>
+            <p><code>this.name</code> refers to the field.
+            <code>name</code> on the right refers to the parameter.</p>
+          </div>
+          <div class="card warn">
+            <h3>Convention</h3>
+            <p>Use the same name for the parameter as the field. Prefix with
+            <code>this.</code> to disambiguate. This makes constructors and setters
+            readable.</p>
+            <pre><span class="kw">public void</span> setRollNo(<span class="kw">int</span> rollNo) {
+    <span class="kw">this</span>.rollNo = rollNo;
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 32. THIS — METHOD CHAINING ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">this</span>
+        <h2><code>this</code> — Method Chaining</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Returning <code>this</code></h3>
+            <p>A method can return <code>this</code> to enable method chaining (fluent
+            API).</p>
+            <pre><span class="kw">public class</span> Student {
+    <span class="kw">private</span> String name;
+    <span class="kw">private int</span> rollNo;
+    <span class="kw">private double</span> gpa;
+
+    <span class="kw">public</span> Student setName(String name) {
+        <span class="kw">this</span>.name = name;
+        <span class="kw">return this</span>;
+    }
+
+    <span class="kw">public</span> Student setRollNo(<span class="kw">int</span> rollNo) {
+        <span class="kw">this</span>.rollNo = rollNo;
+        <span class="kw">return this</span>;
+    }
+
+    <span class="kw">public</span> Student setGpa(<span class="kw">double</span> gpa) {
+        <span class="kw">this</span>.gpa = gpa;
+        <span class="kw">return this</span>;
+    }
+
+    <span class="kw">public void</span> display() {
+        System.out.println(name + <span class="str">" | "</span> + rollNo
+            + <span class="str">" | "</span> + gpa);
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Usage</h3>
+            <pre>Student s = <span class="kw">new</span> Student()
+    .setName(<span class="str">"Alice"</span>)
+    .setRollNo(<span class="num">101</span>)
+    .setGpa(<span class="num">9.1</span>);
+
+s.display();
+<span class="cmt">// Alice | 101 | 9.1</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>Benefits of Fluent APIs</h3>
+            <ul>
+              <li>Concise and readable.</li>
+              <li>Combines multiple operations in a single expression.</li>
+              <li>Common in builders and configuration APIs.</li>
+            </ul>
+          </div>
+          <div class="card danger">
+            <h3>Passing <code>this</code> as an Argument</h3>
+            <pre><span class="kw">public</span> Student(String name) {
+    <span class="kw">this</span>.name = name;
+    register(<span class="kw">this</span>); <span class="cmt">// pass current object</span>
+}
+
+<span class="kw">static void</span> register(Student s) {
+    System.out.println(<span class="str">"Registered: "</span> + s.name);
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 33. THIS() — CONSTRUCTOR CHAINING ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">this</span>
+        <h2><code>this(...)</code> — Constructor Chaining Recap</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Calling Another Constructor</h3>
+            <p><code>this(...)</code> invokes another constructor of the same class. It
+            must be the first statement.</p>
+            <pre><span class="kw">public class</span> Book {
+    String title;
+    String author;
+    <span class="kw">double</span> price;
+
+    <span class="kw">public</span> Book() {
+        <span class="kw">this</span>(<span class="str">"Untitled"</span>, <span class="str">"Unknown"</span>, <span class="num">0.0</span>);
+    }
+
+    <span class="kw">public</span> Book(String title) {
+        <span class="kw">this</span>(title, <span class="str">"Unknown"</span>, <span class="num">0.0</span>);
+    }
+
+    <span class="kw">public</span> Book(String title, String author,
+                <span class="kw">double</span> price) {
+        <span class="kw">this</span>.title = title;
+        <span class="kw">this</span>.author = author;
+        <span class="kw">this</span>.price = price;
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card warn">
+            <h3>Rules</h3>
+            <ul>
+              <li>Must be the first statement.</li>
+              <li>Only one <code>this(...)</code> call per constructor.</li>
+              <li>Do not create cycles.</li>
+              <li>Cannot appear with <code>super(...)</code> in the same constructor.</li>
+            </ul>
+          </div>
+          <div class="card danger">
+            <h3>Invalid Examples</h3>
+            <pre><span class="cmt">// 1. Not first statement</span>
+<span class="kw">public</span> Book() {
+    title = <span class="str">"X"</span>;
+    <span class="kw">this</span>(<span class="str">"Y"</span>); <span class="cmt">// error</span>
+}
+
+<span class="cmt">// 2. Recursive</span>
+<span class="kw">public</span> Book() { <span class="kw">this</span>(); } <span class="cmt">// error</span>
+
+<span class="cmt">// 3. With super</span>
+<span class="kw">public</span> Book() {
+    <span class="kw">super</span>();
+    <span class="kw">this</span>(<span class="str">"X"</span>); <span class="cmt">// error</span>
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 34. SECTION DIVIDER — STATIC MEMBERS ==================== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">06</div>
+      <h1>Static Members</h1>
+      <div class="rule"></div>
+      <p>Static members belong to the class, not to any object. They provide
+      class-level state and behaviour, and initialize when the class loads.</p>
+    </div>
+  </section>
+
+  <!-- ==================== 35. STATIC METHODS ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Static Members</span>
+        <h2>Static Methods</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>Methods declared with <code>static</code>. They belong to the class,
+            not to any object.</p>
+            <pre><span class="kw">public class</span> MathUtil {
+    <span class="kw">public static int</span> square(<span class="kw">int</span> n) {
+        <span class="kw">return</span> n * n;
+    }
+
+    <span class="kw">public static int</span> max(<span class="kw">int</span> a, <span class="kw">int</span> b) {
+        <span class="kw">return</span> (a &gt; b) ? a : b;
+    }
+}
+
+<span class="cmt">// Usage — no object needed</span>
+<span class="kw">int</span> s = MathUtil.square(<span class="num">5</span>); <span class="cmt">// 25</span>
+<span class="kw">int</span> m = MathUtil.max(<span class="num">3</span>, <span class="num">7</span>);   <span class="cmt">// 7</span></pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card warn">
+            <h3>Rules</h3>
+            <ul>
+              <li>Can access static fields and static methods.</li>
+              <li>Cannot access instance fields or methods directly.</li>
+              <li>No <code>this</code> inside a static method.</li>
+              <li>Can be called without creating an object.</li>
+            </ul>
+          </div>
+          <div class="card danger">
+            <h3>Compile Error Example</h3>
+            <pre><span class="kw">public class</span> Student {
+    String name;
+
+    <span class="kw">static void</span> printName() {
+        System.out.println(name);
+        <span class="cmt">// error: cannot access instance field</span>
+    }
+}</pre>
+          </div>
+          <div class="card accent">
+            <h3>Classic Example</h3>
+            <pre><span class="kw">public static void</span> main(String[] args) { }
+<span class="cmt">// JVM calls main without creating an object</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 36. STATIC BLOCKS AND EXECUTION ORDER ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Static Members</span>
+        <h2>Static Blocks and Execution Order</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Static Block</h3>
+            <p>A block of code marked with <code>static</code>. Runs exactly once when
+            the class is loaded, before any static method or constructor is called.</p>
+            <pre><span class="kw">public class</span> Config {
+    <span class="kw">static</span> String appName;
+    <span class="kw">static int</span> version;
+
+    <span class="kw">static</span> {
+        appName = <span class="str">"MyApp"</span>;
+        version = <span class="num">1</span>;
+        System.out.println(<span class="str">"Class loaded."</span>);
+    }
+}</pre>
+          </div>
+          <div class="card warn">
+            <h3>Common Uses</h3>
+            <ul>
+              <li>Loading configuration once.</li>
+              <li>Initializing complex static data.</li>
+              <li>Registering drivers or handlers.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Complete Execution Order</h3>
+            <pre><span class="kw">public class</span> Order {
+    <span class="kw">static int</span> staticVar = initStatic();
+    <span class="kw">int</span> instanceVar = initInstance();
+
+    <span class="kw">static</span> {
+        System.out.println(<span class="str">"Static block"</span>);
+    }
+
+    {
+        System.out.println(<span class="str">"Instance block"</span>);
+    }
+
+    <span class="kw">public</span> Order() {
+        System.out.println(<span class="str">"Constructor"</span>);
+    }
+
+    <span class="kw">static int</span> initStatic() {
+        System.out.println(<span class="str">"Static field"</span>);
+        <span class="kw">return</span> <span class="num">10</span>;
+    }
+
+    <span class="kw">int</span> initInstance() {
+        System.out.println(<span class="str">"Instance field"</span>);
+        <span class="kw">return</span> <span class="num">20</span>;
+    }
+
+    <span class="kw">public static void</span> main(String[] args) {
+        System.out.println(<span class="str">"Main started"</span>);
+        <span class="kw">new</span> Order();
+        <span class="kw">new</span> Order();
+    }
+}</pre>
+          </div>
+          <div class="card">
+            <h3>Output</h3>
+            <div class="term">
+              <div class="out">Static field</div>
+              <div class="out">Static block</div>
+              <div class="out">Main started</div>
+              <div class="out">Instance field</div>
+              <div class="out">Instance block</div>
+              <div class="out">Constructor</div>
+              <div class="out">Instance field</div>
+              <div class="out">Instance block</div>
+              <div class="out">Constructor</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 37. SECTION DIVIDER — FINAL & IDENTITY ==================== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">07</div>
+      <h1><code>final</code> &amp; Object Identity</h1>
+      <div class="rule"></div>
+      <p><code>final</code> prevents reassignment and subclassing. Object identity
+      distinguishes one object from another even when their state is identical.</p>
+    </div>
+  </section>
+
+  <!-- ==================== 38. FINAL VARIABLES AND CONSTANTS ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">final</span>
+        <h2>Final Variables and Constants</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>A <code>final</code> variable can be assigned only once. After
+            assignment, its value cannot be changed.</p>
+            <pre><span class="kw">final int</span> MAX = <span class="num">100</span>;
+MAX = <span class="num">200</span>; <span class="cmt">// compile error</span></pre>
+          </div>
+          <div class="card accent">
+            <h3>Three Forms</h3>
+            <ul>
+              <li><strong>Local final:</strong> inside a method.</li>
+              <li><strong>Instance final:</strong> per-object constant.</li>
+              <li><strong>Static final:</strong> class-level constant.</li>
+            </ul>
+            <pre><span class="kw">public class</span> Circle {
+    <span class="kw">static final double</span> PI = <span class="num">3.14159</span>;
+    <span class="kw">final int</span> radius;
+
+    <span class="kw">public</span> Circle(<span class="kw">int</span> r) {
+        radius = r; <span class="cmt">// assigned once</span>
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card warn">
+            <h3>Initialization Rules for Final Fields</h3>
+            <ul>
+              <li>At declaration, or</li>
+              <li>In every constructor, or</li>
+              <li>In an instance initializer block.</li>
+            </ul>
+          </div>
+          <div class="card danger">
+            <h3>Final Reference vs Final Object</h3>
+            <pre><span class="kw">final int</span>[] arr = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>};
+arr[<span class="num">0</span>] = <span class="num">99</span>; <span class="cmt">// allowed — contents mutable</span>
+arr = <span class="kw">new int</span>[<span class="num">5</span>]; <span class="cmt">// error — reference final</span>
+
+<span class="kw">final</span> StringBuilder sb = <span class="kw">new</span> StringBuilder(<span class="str">"Hi"</span>);
+sb.append(<span class="str">"!"</span>); <span class="cmt">// allowed</span>
+sb = <span class="kw">new</span> StringBuilder(); <span class="cmt">// error</span></pre>
+            <p><code>final</code> applies to the reference, not to the object's
+            contents.</p>
+          </div>
+          <div class="card accent">
+            <h3>Naming Convention</h3>
+            <p>Constants are named in <code>UPPER_SNAKE_CASE</code>.</p>
+            <pre><span class="kw">static final int</span> MAX_SIZE = <span class="num">1024</span>;
+<span class="kw">static final</span> String APP_NAME = <span class="str">"MyApp"</span>;</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 39. FINAL METHODS, CLASSES, IMMUTABILITY ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">final</span>
+        <h2>Final Methods, Classes, and Immutability</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Final Methods</h3>
+            <p>A final method cannot be overridden by a subclass.</p>
+            <pre><span class="kw">public class</span> Base {
+    <span class="kw">public final void</span> coreLogic() {
+        <span class="cmt">// cannot be overridden</span>
+    }
+}</pre>
+          </div>
+          <div class="card accent">
+            <h3>Final Classes</h3>
+            <p>A final class cannot be extended. Examples:
+            <code>String</code>, <code>Integer</code>, <code>Math</code>.</p>
+            <pre><span class="kw">public final class</span> ImmutablePoint {
+    <span class="kw">private final int</span> x;
+    <span class="kw">private final int</span> y;
+
+    <span class="kw">public</span> ImmutablePoint(<span class="kw">int</span> x, <span class="kw">int</span> y) {
+        <span class="kw">this</span>.x = x;
+        <span class="kw">this</span>.y = y;
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Immutability</h3>
+            <p>A class is immutable if its state cannot change after construction.</p>
+            <ul>
+              <li>Make the class <code>final</code>.</li>
+              <li>Make all fields <code>private</code> and <code>final</code>.</li>
+              <li>Do not provide setters.</li>
+              <li>Initialize all fields in the constructor.</li>
+              <li>If a field is mutable, return a copy from getters.</li>
+            </ul>
+          </div>
+          <div class="card warn">
+            <h3>Example — Money</h3>
+            <pre><span class="kw">public final class</span> Money {
+    <span class="kw">private final double</span> amount;
+    <span class="kw">private final</span> String currency;
+
+    <span class="kw">public</span> Money(<span class="kw">double</span> amount, String currency) {
+        <span class="kw">this</span>.amount = amount;
+        <span class="kw">this</span>.currency = currency;
+    }
+
+    <span class="kw">public double</span> getAmount() { <span class="kw">return</span> amount; }
+    <span class="kw">public</span> String getCurrency() { <span class="kw">return</span> currency; }
+
+    <span class="kw">public</span> Money add(Money other) {
+        <span class="kw">if</span> (!<span class="kw">this</span>.currency.equals(other.currency)) {
+            <span class="kw">throw new</span> IllegalArgumentException(
+                <span class="str">"Currency mismatch"</span>);
+        }
+        <span class="kw">return new</span> Money(<span class="kw">this</span>.amount + other.amount,
+                          <span class="kw">this</span>.currency);
+    }
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 40. OBJECT IDENTITY AND SUMMARY ==================== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Wrap-Up</span>
+        <h2>Object Identity and Week Summary</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Identity vs Equality</h3>
+            <table>
+              <thead>
+                <tr><th>Aspect</th><th>Identity (<code>==</code>)</th><th>Equality (<code>equals()</code>)</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Compares</td><td>References</td><td>Content</td></tr>
+                <tr><td>Default</td><td>Same object?</td><td>Same object?</td></tr>
+                <tr><td>Overridable</td><td>No</td><td>Yes</td></tr>
+                <tr><td>Use</td><td>Reference comparison</td><td>Value comparison</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card accent">
+            <h3>Overriding <code>equals()</code> and <code>hashCode()</code></h3>
+            <pre><span class="kw">@Override</span>
+<span class="kw">public boolean</span> equals(Object o) {
+    <span class="kw">if</span> (<span class="kw">this</span> == o) <span class="kw">return true</span>;
+    <span class="kw">if</span> (o == <span class="kw">null</span> || getClass() != o.getClass())
+        <span class="kw">return false</span>;
+    Student s = (Student) o;
+    <span class="kw">return</span> rollNo == s.rollNo
+        &amp;&amp; Objects.equals(name, s.name);
+}
+
+<span class="kw">@Override</span>
+<span class="kw">public int</span> hashCode() {
+    <span class="kw">return</span> Objects.hash(name, rollNo);
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card warn">
+            <h3>Key Takeaways</h3>
+            <ul>
+              <li>A class is a blueprint; an object is an instance.</li>
+              <li>Instance members belong to objects; static members belong to the class.</li>
+              <li>Encapsulation protects invariants through private fields and validated accessors.</li>
+              <li>Constructors initialize objects and can be overloaded and chained.</li>
+              <li><code>this</code> refers to the current object and resolves naming conflicts.</li>
+              <li><code>final</code> prevents reassignment, overriding, and extension.</li>
+              <li>Identity (<code>==</code>) and equality (<code>equals()</code>) are different concepts.</li>
+            </ul>
+          </div>
+          <div class="card accent">
+            <h3>Before Next Week, Ensure You Can</h3>
+            <ul>
+              <li>Write a class with private fields and public accessors.</li>
+              <li>Write default, parameterized, and copy constructors.</li>
+              <li>Chain constructors with <code>this(...)</code>.</li>
+              <li>Use <code>this</code> correctly in methods and constructors.</li>
+              <li>Declare static counters, constants, and utility methods.</li>
+              <li>Apply <code>final</code> appropriately.</li>
+              <li>Override <code>equals()</code>, <code>hashCode()</code>, and <code>toString()</code>.</li>
+              <li>Model Student, Book, and BankAccount with proper encapsulation.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <p class="blink green" style="font-size:1.05em">End of Week 4 — Classes, Objects &amp; Constructors</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="hud">
+  <span class="brand">5th Sem · Week 4 · Classes, Objects &amp; Constructors</span>
+  <span class="counter"><span id="cur">1</span> / <span id="total">40</span></span>
+</div>
+
+<div class="nav">
+  <button id="prev" title="Previous (←)">&#8249;</button>
+  <button id="next" title="Next (→)">&#8250;</button>
+</div>
+
+<div class="progress"><i id="bar"></i></div>
+
+<script>
+/* ---------------- Matrix rain ---------------- */
+(function () {
+  const canvas = document.getElementById('matrix');
+  const ctx = canvas.getContext('2d');
+  let cols, drops, fontSize = 14;
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    cols = Math.floor(canvas.width / fontSize);
+    drops = new Array(cols).fill(1);
+    ctx.font = fontSize + 'px monospace';
+  }
+
+  const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+  function draw() {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#00ff41';
+    ctx.font = fontSize + 'px monospace';
+    for (let i = 0; i < drops.length; i++) {
+      const text = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+        drops[i] = 0;
+      }
+      drops[i]++;
+    }
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  setInterval(draw, 55);
+})();
+
+/* ---------------- Slide navigation ---------------- */
+(function () {
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  const curEl = document.getElementById('cur');
+  const totalEl = document.getElementById('total');
+  const bar = document.getElementById('bar');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  let index = 0;
+
+  totalEl.textContent = total;
+
+  function render() {
+    slides.forEach((s, i) => s.classList.toggle('active', i === index));
+    curEl.textContent = index + 1;
+    bar.style.width = ((index + 1) / total * 100) + '%';
+    prevBtn.disabled = index === 0;
+    nextBtn.disabled = index === total - 1;
+    const active = slides[index];
+    if (active) active.scrollTop = 0;
+  }
+
+  function go(delta) {
+    const next = index + delta;
+    if (next < 0 || next >= total) return;
+    index = next;
+    render();
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault();
+      go(1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      go(-1);
+    } else if (e.key === 'Home') {
+      index = 0; render();
+    } else if (e.key === 'End') {
+      index = total - 1; render();
+    }
+  });
+
+  prevBtn.addEventListener('click', () => go(-1));
+  nextBtn.addEventListener('click', () => go(1));
+
+  document.getElementById('deck').addEventListener('click', (e) => {
+    if (e.target.closest('a, button, pre, code, table')) return;
+    go(1);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

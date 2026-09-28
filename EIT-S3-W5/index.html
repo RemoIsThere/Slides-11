@@ -1,0 +1,3095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sem 3 — Polymorphism, Generics & Lambdas | Java</title>
+
+<style>
+    :root {
+        --bg: #020403;
+        --panel: rgba(3, 12, 7, 0.90);
+        --panel2: rgba(5, 18, 10, 0.96);
+        --green: #00ff66;
+        --green-soft: #83ffad;
+        --green-dark: #0a6b35;
+        --text: #d9ffe6;
+        --muted: #78a487;
+        --danger: #ff5d73;
+        --warning: #ffd166;
+        --border: rgba(0, 255, 102, 0.30);
+        --shadow: 0 0 30px rgba(0,255,102,0.08);
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    html,
+    body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Inter, Segoe UI, Arial, sans-serif;
+    }
+
+    body {
+        position: relative;
+    }
+
+    #matrix {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        opacity: 0.18;
+        pointer-events: none;
+    }
+
+    .scanlines {
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        background:
+            repeating-linear-gradient(
+                to bottom,
+                rgba(255,255,255,0.015) 0,
+                rgba(255,255,255,0.015) 1px,
+                transparent 1px,
+                transparent 4px
+            );
+        mix-blend-mode: screen;
+    }
+
+    .vignette {
+        position: fixed;
+        inset: 0;
+        z-index: 2;
+        pointer-events: none;
+        background:
+            radial-gradient(
+                ellipse at center,
+                transparent 40%,
+                rgba(0,0,0,0.52) 100%
+            );
+    }
+
+    .app {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .topbar {
+        height: 64px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        background: rgba(0,0,0,0.58);
+        backdrop-filter: blur(8px);
+        flex-shrink: 0;
+        position: relative;
+    }
+
+    .brand {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        color: var(--green);
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .brand::before {
+        content: ">";
+        font-size: 21px;
+    }
+
+    .meta {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        color: var(--muted);
+        font-size: 12px;
+    }
+
+    .counter {
+        min-width: 70px;
+        color: var(--green);
+        font-family: "Courier New", monospace;
+        font-weight: 800;
+        text-align: right;
+    }
+
+    .btn {
+        border: 1px solid var(--border);
+        background: rgba(0,255,102,0.05);
+        color: var(--green);
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 700;
+        transition: 0.2s ease;
+    }
+
+    .btn:hover {
+        background: rgba(0,255,102,0.13);
+        box-shadow: 0 0 15px rgba(0,255,102,0.14);
+    }
+
+    .btn:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+
+    .progress-wrap {
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: rgba(0,255,102,0.06);
+    }
+
+    .progress {
+        height: 100%;
+        width: 0%;
+        background: var(--green);
+        box-shadow: 0 0 12px var(--green);
+        transition: width 0.2s ease;
+    }
+
+    .stage {
+        flex: 1;
+        position: relative;
+        min-height: 0;
+    }
+
+    .slides {
+        width: 100%;
+        height: 100%;
+        position: relative;
+    }
+
+    .slide {
+        position: absolute;
+        inset: 0;
+        display: none;
+        overflow-y: auto;
+        padding: 34px 7vw 100px;
+    }
+
+    .slide.active {
+        display: block;
+        animation: appear 0.35s ease;
+    }
+
+    @keyframes appear {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .slide-inner {
+        max-width: 1250px;
+        margin: 0 auto;
+    }
+
+    .eyebrow {
+        color: var(--green);
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        font-size: 11px;
+        font-weight: 800;
+        margin-bottom: 13px;
+    }
+
+    h1,
+    h2,
+    h3 {
+        font-family: "Courier New", monospace;
+        color: var(--green);
+    }
+
+    h1 {
+        font-size: clamp(34px, 5vw, 68px);
+        line-height: 0.98;
+        margin-bottom: 18px;
+        text-shadow: 0 0 22px rgba(0,255,102,0.15);
+    }
+
+    h2 {
+        font-size: clamp(27px, 3.8vw, 48px);
+        margin-bottom: 18px;
+    }
+
+    h3 {
+        font-size: 19px;
+        margin-bottom: 10px;
+    }
+
+    p {
+        line-height: 1.65;
+        color: var(--text);
+    }
+
+    .lead {
+        font-size: 19px;
+        max-width: 920px;
+        color: #bcffd2;
+    }
+
+    .grid {
+        display: grid;
+        gap: 18px;
+    }
+
+    .grid-2 {
+        grid-template-columns: repeat(2, minmax(0,1fr));
+    }
+
+    .grid-3 {
+        grid-template-columns: repeat(3, minmax(0,1fr));
+    }
+
+    .card {
+        background:
+            linear-gradient(
+                145deg,
+                rgba(4,18,9,0.95),
+                rgba(2,8,4,0.93)
+            );
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: var(--shadow);
+    }
+
+    .card strong {
+        color: var(--green-soft);
+    }
+
+    .tag {
+        display: inline-block;
+        border: 1px solid var(--border);
+        color: var(--green);
+        border-radius: 999px;
+        padding: 5px 10px;
+        margin: 3px 4px 3px 0;
+        font-size: 11px;
+        font-weight: 800;
+        background: rgba(0,255,102,0.04);
+    }
+
+    ul,
+    ol {
+        padding-left: 22px;
+    }
+
+    li {
+        margin: 8px 0;
+        line-height: 1.5;
+    }
+
+    pre {
+        margin-top: 15px;
+        background: #010201;
+        border: 1px solid rgba(0,255,102,0.20);
+        border-radius: 9px;
+        padding: 17px;
+        overflow-x: auto;
+        line-height: 1.55;
+        color: #c9ffd9;
+        position: relative;
+    }
+
+    code {
+        font-family: "Courier New", monospace;
+    }
+
+    .keyword {
+        color: #8effb5;
+    }
+
+    .type {
+        color: #b7ffd0;
+    }
+
+    .string {
+        color: #f4ff89;
+    }
+
+    .comment {
+        color: #568a67;
+    }
+
+    .number {
+        color: #a5d8ff;
+    }
+
+    .method {
+        color: #b5ffcc;
+    }
+
+    .copy-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        padding: 5px 8px;
+        font-size: 10px;
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        background: rgba(0,255,102,0.05);
+        color: var(--green);
+        cursor: pointer;
+    }
+
+    .callout {
+        border-left: 4px solid var(--green);
+        background: rgba(0,255,102,0.06);
+        padding: 15px 17px;
+        border-radius: 0 8px 8px 0;
+        margin: 18px 0;
+    }
+
+    .warning {
+        border-left-color: var(--warning);
+        background: rgba(255,209,102,0.07);
+    }
+
+    .danger {
+        border-left-color: var(--danger);
+        background: rgba(255,93,115,0.07);
+    }
+
+    .diagram {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 9px;
+        margin: 22px 0;
+    }
+
+    .node {
+        min-width: 125px;
+        padding: 13px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        text-align: center;
+        background: rgba(0,255,102,0.04);
+        color: var(--green-soft);
+        font-family: "Courier New", monospace;
+        font-weight: 800;
+    }
+
+    .arrow {
+        color: var(--green);
+        font-size: 22px;
+    }
+
+    .interactive {
+        margin-top: 22px;
+        background: rgba(0,255,102,0.035);
+        border: 1px dashed rgba(0,255,102,0.33);
+        border-radius: 10px;
+        padding: 18px;
+    }
+
+    .question {
+        color: #caffd8;
+        font-weight: 700;
+        margin-bottom: 12px;
+        line-height: 1.5;
+    }
+
+    .choices {
+        display: flex;
+        gap: 9px;
+        flex-wrap: wrap;
+    }
+
+    .choice {
+        padding: 9px 12px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        cursor: pointer;
+        background: rgba(0,255,102,0.04);
+        color: var(--text);
+    }
+
+    .choice:hover {
+        background: rgba(0,255,102,0.12);
+    }
+
+    .choice.correct {
+        border-color: var(--green);
+        background: rgba(0,255,102,0.14);
+        color: var(--green-soft);
+    }
+
+    .choice.wrong {
+        border-color: var(--danger);
+        background: rgba(255,93,115,0.11);
+        color: #ffb1bb;
+    }
+
+    .answer {
+        display: none;
+        margin-top: 12px;
+        padding: 11px;
+        border-radius: 6px;
+        background: rgba(0,255,102,0.06);
+        border: 1px solid rgba(0,255,102,0.16);
+        color: var(--green-soft);
+    }
+
+    .answer.show {
+        display: block;
+    }
+
+    .reveal {
+        border: 1px solid var(--border);
+        color: var(--green);
+        background: rgba(0,255,102,0.04);
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+
+    .terminal {
+        background: #000;
+        border: 1px solid rgba(0,255,102,0.25);
+        border-radius: 9px;
+        padding: 16px;
+        color: #76ff9c;
+        font-family: "Courier New", monospace;
+        margin-top: 15px;
+    }
+
+    .terminal::before {
+        content: "$ java Demo";
+        display: block;
+        color: #4b8c61;
+        margin-bottom: 7px;
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 14px;
+    }
+
+    .table th,
+    .table td {
+        border: 1px solid rgba(0,255,102,0.16);
+        padding: 10px 12px;
+        text-align: left;
+        vertical-align: top;
+    }
+
+    .table th {
+        color: var(--green);
+        background: rgba(0,255,102,0.07);
+    }
+
+    .table td {
+        color: #cbfbd7;
+    }
+
+    .footer {
+        position: absolute;
+        bottom: 20px;
+        left: 7vw;
+        right: 7vw;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        pointer-events: none;
+    }
+
+    .footer-controls {
+        display: flex;
+        gap: 8px;
+        pointer-events: auto;
+    }
+
+    .hint {
+        color: #4f7c5d;
+        font-size: 11px;
+    }
+
+    .hero-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 30px;
+        align-items: center;
+        min-height: 70vh;
+    }
+
+    .matrix-box {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 25px;
+        background:
+            linear-gradient(
+                150deg,
+                rgba(0,255,102,0.08),
+                rgba(0,0,0,0.55)
+            );
+        box-shadow: 0 0 35px rgba(0,255,102,0.06);
+    }
+
+    .matrix-box .big {
+        font-size: clamp(70px,10vw,150px);
+        line-height: 0.9;
+        color: var(--green);
+        font-family: "Courier New", monospace;
+        font-weight: 900;
+        text-shadow: 0 0 35px rgba(0,255,102,0.17);
+    }
+
+    .split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+        .grid-2,
+        .grid-3,
+        .hero-grid,
+        .split {
+            grid-template-columns: 1fr;
+        }
+
+        .slide {
+            padding: 28px 5vw 110px;
+        }
+
+        .topbar {
+            padding: 0 15px;
+        }
+
+        .meta > span:first-child {
+            display: none;
+        }
+
+        .hint {
+            display: none;
+        }
+
+        .footer {
+            left: 5vw;
+            right: 5vw;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<canvas id="matrix"></canvas>
+<div class="scanlines"></div>
+<div class="vignette"></div>
+
+<div class="app">
+
+<header class="topbar">
+
+    <div class="brand">
+        JAVA // SEM 03 // POLYMORPHISM + GENERICS + LAMBDAS
+    </div>
+
+    <div class="meta">
+        <span>JAVA PROGRAMMING</span>
+        <span class="counter" id="counter">01 / 40</span>
+        <button class="btn" id="fullscreenBtn">FULLSCREEN</button>
+    </div>
+
+    <div class="progress-wrap">
+        <div class="progress" id="progress"></div>
+    </div>
+
+</header>
+
+<main class="stage">
+
+<div class="slides" id="slides">
+
+<!-- =========================================================
+     01
+========================================================= -->
+
+<section class="slide active">
+<div class="slide-inner hero-grid">
+
+    <div>
+
+        <div class="eyebrow">
+            Semester 3 · Java Programming
+        </div>
+
+        <h1>
+            Polymorphism<br>
+            + Generics<br>
+            + Lambdas
+        </h1>
+
+        <p class="lead">
+            Understand how Java decides method behavior,
+            how objects are cast safely, how generic code avoids
+            unnecessary duplication, and how lambdas simplify
+            functional programming.
+        </p>
+
+        <div style="margin-top:22px">
+
+            <span class="tag">Dynamic Binding</span>
+            <span class="tag">Casting</span>
+            <span class="tag">instanceof</span>
+            <span class="tag">Overloading</span>
+            <span class="tag">Polymorphism</span>
+            <span class="tag">Generics</span>
+            <span class="tag">Lambdas</span>
+            <span class="tag">Functional Interfaces</span>
+
+        </div>
+
+    </div>
+
+    <div class="matrix-box">
+
+        <div class="big">&lambda;</div>
+
+        <p style="margin-top:15px">
+
+            <strong>Core idea:</strong><br>
+
+            Java allows one abstraction to represent
+            multiple implementations while generic and
+            functional programming techniques make the
+            resulting code more reusable.
+
+        </p>
+
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     02
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">02 / 40</div>
+
+    <h2>Module Map</h2>
+
+    <div class="grid grid-3">
+
+        <div class="card">
+            <h3>Polymorphism</h3>
+            <p>
+                Dynamic binding, casting, instanceof,
+                overloading and compile-time/runtime
+                polymorphism.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>Generic Programming</h3>
+            <p>
+                Type parameters, reusable classes,
+                generic methods and type safety.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>Functional Java</h3>
+            <p>
+                Lambdas, functional interfaces,
+                default methods and static interface methods.
+            </p>
+        </div>
+
+    </div>
+
+    <div class="callout">
+
+        <strong>Learning order:</strong>
+        reference types → binding → casting →
+        polymorphism → generics → lambdas →
+        interfaces.
+
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     03
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">03 / 40</div>
+
+    <h2>What Is Polymorphism?</h2>
+
+    <p class="lead">
+
+        Polymorphism literally means
+        <strong>one interface, many forms</strong>.
+
+    </p>
+
+    <div class="diagram">
+
+        <div class="node">Animal</div>
+
+        <div class="arrow">→</div>
+
+        <div class="node">Dog</div>
+
+        <div class="arrow">+</div>
+
+        <div class="node">Cat</div>
+
+    </div>
+
+    <pre><code><span class="type">Animal</span> a1 = <span class="keyword">new</span> <span class="type">Dog</span>();
+<span class="type">Animal</span> a2 = <span class="keyword">new</span> <span class="type">Cat</span>();
+
+a1.sound();
+a2.sound();</code></pre>
+
+    <div class="callout">
+
+        The reference type can remain
+        <code>Animal</code>, while the actual runtime
+        object can be different.
+
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     04
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">04 / 40</div>
+
+    <h2>Two Forms of Polymorphism</h2>
+
+    <div class="grid grid-2">
+
+        <div class="card">
+
+            <h3>Compile-Time Polymorphism</h3>
+
+            <p>
+                Usually achieved through method overloading.
+                The compiler determines which overloaded method
+                matches the argument list.
+            </p>
+
+            <pre><code><span class="keyword">void</span> <span class="method">print</span>(<span class="keyword">int</span> x) {}
+
+<span class="keyword">void</span> <span class="method">print</span>(<span class="type">String</span> x) {}</code></pre>
+
+        </div>
+
+        <div class="card">
+
+            <h3>Runtime Polymorphism</h3>
+
+            <p>
+                Achieved through overriding and dynamic binding
+                of instance methods.
+            </p>
+
+            <pre><code><span class="type">Animal</span> a = <span class="keyword">new</span> <span class="type">Dog</span>();
+
+a.sound();</code></pre>
+
+        </div>
+
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     05
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">05 / 40</div>
+
+    <h2>Compile-Time Binding</h2>
+
+    <p class="lead">
+        During compilation, Java resolves an overloaded method
+        based on the method name and argument types.
+    </p>
+
+    <pre><code><span class="keyword">class</span> <span class="type">Printer</span> {
+
+    <span class="keyword">void</span> <span class="method">print</span>(<span class="keyword">int</span> value) {
+        System.out.println(<span class="string">"Integer"</span>);
+    }
+
+    <span class="keyword">void</span> <span class="method">print</span>(<span class="type">String</span> value) {
+        System.out.println(<span class="string">"String"</span>);
+    }
+}
+
+<span class="type">Printer</span> p = <span class="keyword">new</span> <span class="type">Printer</span>();
+
+p.print(<span class="number">10</span>);
+p.print(<span class="string">"Java"</span>);</code></pre>
+
+    <div class="terminal">
+        Integer<br>
+        String
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     06
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">06 / 40</div>
+
+    <h2>Method Overloading</h2>
+
+    <p class="lead">
+        Same method name, different parameter list.
+    </p>
+
+    <pre><code><span class="keyword">class</span> <span class="type">Calculator</span> {
+
+    <span class="keyword">int</span> <span class="method">add</span>(<span class="keyword">int</span> a, <span class="keyword">int</span> b) {
+        <span class="keyword">return</span> a + b;
+    }
+
+    <span class="keyword">int</span> <span class="method">add</span>(<span class="keyword">int</span> a,
+            <span class="keyword">int</span> b,
+            <span class="keyword">int</span> c) {
+        <span class="keyword">return</span> a + b + c;
+    }
+
+    <span class="type">double</span> <span class="method">add</span>(<span class="type">double</span> a,
+               <span class="type">double</span> b) {
+        <span class="keyword">return</span> a + b;
+    }
+}</code></pre>
+
+    <div class="callout">
+
+        Changing only the return type is not sufficient
+        to overload a method.
+
+    </div>
+
+    <div class="interactive">
+
+        <div class="question">
+            Which change creates a valid overload?
+        </div>
+
+        <div class="choices">
+
+            <button class="choice" data-correct="true">
+                Add another parameter
+            </button>
+
+            <button class="choice" data-correct="false">
+                Change only return type
+            </button>
+
+            <button class="choice" data-correct="false">
+                Change method visibility only
+            </button>
+
+        </div>
+
+        <div class="answer">
+            Correct. The parameter list must differ.
+        </div>
+
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     07
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">07 / 40</div>
+
+    <h2>Runtime Polymorphism</h2>
+
+    <pre><code><span class="keyword">class</span> <span class="type">Animal</span> {
+
+    <span class="keyword">void</span> <span class="method">sound</span>() {
+        System.out.println(<span class="string">"Animal sound"</span>);
+    }
+}
+
+<span class="keyword">class</span> <span class="type">Dog</span>
+        <span class="keyword">extends</span> <span class="type">Animal</span> {
+
+    <span class="annotation">@Override</span>
+    <span class="keyword">void</span> <span class="method">sound</span>() {
+        System.out.println(<span class="string">"Bark"</span>);
+    }
+}
+
+<span class="type">Animal</span> a = <span class="keyword">new</span> <span class="type">Dog</span>();
+
+a.sound();</code></pre>
+
+    <div class="diagram">
+
+        <div class="node">Reference<br>Animal</div>
+
+        <div class="arrow">→</div>
+
+        <div class="node">Object<br>Dog</div>
+
+        <div class="arrow">→</div>
+
+        <div class="node">Dog.sound()</div>
+
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     08
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">08 / 40</div>
+
+    <h2>Dynamic Binding</h2>
+
+    <p class="lead">
+
+        Dynamic binding means that an overridden instance method
+        is selected using the actual object at runtime.
+
+    </p>
+
+    <pre><code><span class="keyword">class</span> <span class="type">Vehicle</span> {
+
+    <span class="keyword">void</span> <span class="method">start</span>() {
+        System.out.println(<span class="string">"Vehicle starts"</span>);
+    }
+}
+
+<span class="keyword">class</span> <span class="type">Car</span>
+        <span class="keyword">extends</span> <span class="type">Vehicle</span> {
+
+    <span class="keyword">void</span> <span class="method">start</span>() {
+        System.out.println(<span class="string">"Car starts"</span>);
+    }
+}
+
+<span class="type">Vehicle</span> v = <span class="keyword">new</span> <span class="type">Car</span>();
+
+v.start();</code></pre>
+
+    <div class="terminal">
+        Car starts
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     09
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">09 / 40</div>
+
+    <h2>Compile-Time vs Runtime</h2>
+
+    <table class="table">
+
+        <thead>
+            <tr>
+                <th>Aspect</th>
+                <th>Compile-Time</th>
+                <th>Runtime</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            <tr>
+                <td>Typical mechanism</td>
+                <td>Overloading</td>
+                <td>Overriding</td>
+            </tr>
+
+            <tr>
+                <td>Decision point</td>
+                <td>Compilation</td>
+                <td>Execution</td>
+            </tr>
+
+            <tr>
+                <td>Important information</td>
+                <td>Argument/reference types</td>
+                <td>Actual object</td>
+            </tr>
+
+            <tr>
+                <td>Example</td>
+                <td><code>add(int,int)</code></td>
+                <td><code>Animal a = new Dog()</code></td>
+            </tr>
+
+        </tbody>
+
+    </table>
+
+    <div class="interactive">
+
+        <div class="question">
+            Which one depends primarily on the runtime object?
+        </div>
+
+        <div class="choices">
+
+            <button class="choice" data-correct="false">
+                Method overloading
+            </button>
+
+            <button class="choice" data-correct="true">
+                Method overriding
+            </button>
+
+        </div>
+
+        <div class="answer">
+            Correct. Overridden instance methods participate in dynamic dispatch.
+        </div>
+
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     10
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">10 / 40</div>
+
+    <h2>Upcasting Objects</h2>
+
+    <p class="lead">
+        A subclass object can be stored in a superclass reference.
+    </p>
+
+    <pre><code><span class="keyword">class</span> <span class="type">Animal</span> { }
+
+<span class="keyword">class</span> <span class="type">Dog</span>
+        <span class="keyword">extends</span> <span class="type">Animal</span> {
+
+    <span class="keyword">void</span> <span class="method">fetch</span>() {
+        System.out.println(<span class="string">"Fetching"</span>);
+    }
+}
+
+<span class="type">Dog</span> dog = <span class="keyword">new</span> <span class="type">Dog</span>();
+
+<span class="type">Animal</span> animal = dog;</code></pre>
+
+    <div class="callout">
+        Upcasting is safe because every Dog is an Animal.
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     11
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">11 / 40</div>
+
+    <h2>Downcasting Objects</h2>
+
+    <p class="lead">
+        A superclass reference can be explicitly cast to a subclass
+        reference when the actual object is really that subclass.
+    </p>
+
+    <pre><code><span class="type">Animal</span> animal =
+        <span class="keyword">new</span> <span class="type">Dog</span>();
+
+<span class="type">Dog</span> dog =
+        (<span class="type">Dog</span>) animal;
+
+dog.fetch();</code></pre>
+
+    <div class="callout warning">
+        Downcasting requires an explicit cast.
+    </div>
+
+    <div class="callout danger">
+        A wrong downcast can throw
+        <code>ClassCastException</code>.
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     12
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">12 / 40</div>
+
+    <h2>Safe Casting with instanceof</h2>
+
+    <pre><code><span class="type">Animal</span> animal =
+        <span class="keyword">new</span> <span class="type">Dog</span>();
+
+<span class="keyword">if</span> (animal <span class="keyword">instanceof</span> <span class="type">Dog</span>) {
+
+    <span class="type">Dog</span> dog =
+        (<span class="type">Dog</span>) animal;
+
+    dog.fetch();
+}</code></pre>
+
+    <div class="interactive">
+
+        <div class="question">
+            Why use instanceof before a downcast?
+        </div>
+
+        <div class="choices">
+
+            <button class="choice" data-correct="true">
+                To check type compatibility
+            </button>
+
+            <button class="choice" data-correct="false">
+                To create a new object
+            </button>
+
+            <button class="choice" data-correct="false">
+                To change inheritance
+            </button>
+
+        </div>
+
+        <div class="answer">
+            Correct. It checks whether the runtime object is compatible with the
+            tested type.
+        </div>
+
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     13
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">13 / 40</div>
+
+    <h2>ClassCastException</h2>
+
+    <pre><code><span class="keyword">class</span> <span class="type">Animal</span> { }
+
+<span class="keyword">class</span> <span class="type">Dog</span>
+        <span class="keyword">extends</span> <span class="type">Animal</span> { }
+
+<span class="keyword">class</span> <span class="type">Cat</span>
+        <span class="keyword">extends</span> <span class="type">Animal</span> { }
+
+<span class="type">Animal</span> a =
+        <span class="keyword">new</span> <span class="type">Cat</span>();
+
+<span class="type">Dog</span> d =
+        (<span class="type">Dog</span>) a;</code></pre>
+
+    <div class="terminal">
+        Exception in thread "main"
+        java.lang.ClassCastException
+    </div>
+
+    <div class="callout danger">
+        The reference type says Animal, but the actual object is Cat.
+        A Cat object cannot be treated as a Dog object.
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     14
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">14 / 40</div>
+
+    <h2>instanceof — Multiple Checks</h2>
+
+    <pre><code><span class="type">Animal</span> a = <span class="keyword">new</span> <span class="type">Dog</span>();
+
+<span class="keyword">if</span> (a <span class="keyword">instanceof</span> <span class="type">Dog</span>) {
+
+    System.out.println(<span class="string">"Dog"</span>);
+
+} <span class="keyword">else if</span>
+    (a <span class="keyword">instanceof</span> <span class="type">Cat</span>) {
+
+    System.out.println(<span class="string">"Cat"</span>);
+
+} <span class="keyword">else</span> {
+
+    System.out.println(<span class="string">"Other Animal"</span>);
+}</code></pre>
+
+    <div class="callout">
+        Multiple runtime type checks can be useful,
+        but excessive instanceof logic may indicate that
+        polymorphism is not being used effectively.
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     15
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">15 / 40</div>
+
+    <h2>Generic Programming</h2>
+
+    <p class="lead">
+
+        Generic programming allows classes and methods to operate
+        on different types while preserving compile-time type safety.
+
+    </p>
+
+    <div class="grid grid-3">
+
+        <div class="card">
+            <h3>Reusable</h3>
+            <p>
+                Write the logic once and use it with many types.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>Type Safe</h3>
+            <p>
+                Type errors can be detected during compilation.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>Readable</h3>
+            <p>
+                The intended type is visible in the code.
+            </p>
+        </div>
+
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     16
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">16 / 40</div>
+
+    <h2>Why Generics?</h2>
+
+    <pre><code><span class="type">Object</span> value = <span class="string">"Java"</span>;
+
+<span class="type">String</span> text =
+        (<span class="type">String</span>) value;</code></pre>
+
+    <p style="margin-top:15px">
+        Raw Object-based designs often require explicit casts.
+    </p>
+
+    <pre><code><span class="type">Box</span>&lt;<span class="type">String</span>&gt; box =
+        <span class="keyword">new</span> <span class="type">Box</span>&lt;&gt;();
+
+box.set(<span class="string">"Java"</span>);
+
+<span class="type">String</span> text = box.get();</code></pre>
+
+    <div class="callout">
+        Generics shift many type checks from runtime toward compile time.
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     17
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">17 / 40</div>
+
+    <h2>Generic Class</h2>
+
+    <pre><code><span class="keyword">class</span> <span class="type">Box</span>&lt;<span class="type">T</span>&gt; {
+
+    <span class="keyword">private</span> <span class="type">T</span> value;
+
+    <span class="keyword">void</span> <span class="method">set</span>(<span class="type">T</span> value) {
+        <span class="keyword">this</span>.value = value;
+    }
+
+    <span class="type">T</span> <span class="method">get</span>() {
+        <span class="keyword">return</span> value;
+    }
+}</code></pre>
+
+    <pre><code><span class="type">Box</span>&lt;<span class="type">String</span>&gt; name =
+        <span class="keyword">new</span> <span class="type">Box</span>&lt;&gt;();
+
+name.set(<span class="string">"Aman"</span>);
+
+System.out.println(name.get());</code></pre>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     18
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">18 / 40</div>
+
+    <h2>Generic Class with Integer</h2>
+
+    <pre><code><span class="type">Box</span>&lt;<span class="type">Integer</span>&gt; numbers =
+        <span class="keyword">new</span> <span class="type">Box</span>&lt;&gt;();
+
+numbers.set(<span class="number">100</span>);
+
+<span class="type">Integer</span> value = numbers.get();
+
+System.out.println(value);</code></pre>
+
+    <div class="grid grid-2">
+
+        <div class="card">
+
+            <h3>String Box</h3>
+
+            <pre><code>Box&lt;String&gt;</code></pre>
+
+        </div>
+
+        <div class="card">
+
+            <h3>Integer Box</h3>
+
+            <pre><code>Box&lt;Integer&gt;</code></pre>
+
+        </div>
+
+    </div>
+
+    <div class="callout">
+        The class logic stays the same. Only the type parameter changes.
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     19
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">19 / 40</div>
+
+    <h2>Generic Methods</h2>
+
+    <pre><code><span class="keyword">class</span> <span class="type">Util</span> {
+
+    <span class="keyword">static</span>
+    &lt;<span class="type">T</span>&gt;
+    <span class="keyword">void</span> <span class="method">print</span>(<span class="type">T</span> value) {
+
+        System.out.println(value);
+    }
+}
+
+<span class="type">Util</span>.print(<span class="string">"Java"</span>);
+<span class="type">Util</span>.print(<span class="number">100</span>);
+<span class="type">Util</span>.print(<span class="number">4.5</span>);</code></pre>
+
+    <div class="callout">
+        <code>&lt;T&gt;</code> declares a type parameter for the method.
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     20
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">20 / 40</div>
+
+    <h2>Bounded Generics</h2>
+
+    <p class="lead">
+        A type parameter can be restricted using an upper bound.
+    </p>
+
+    <pre><code><span class="keyword">static</span>
+&lt;<span class="type">T</span> <span class="keyword">extends</span> <span class="type">Number</span>&gt;
+<span class="keyword">double</span> <span class="method">square</span>(<span class="type">T</span> value) {
+
+    <span class="keyword">double</span> n =
+        value.doubleValue();
+
+    <span class="keyword">return</span> n * n;
+}</code></pre>
+
+    <pre><code>square(<span class="number">5</span>);
+square(<span class="number">2.5</span>);</code></pre>
+
+    <div class="callout">
+        The bound guarantees that T provides the behavior available through Number.
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     21
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">21 / 40</div>
+
+    <h2>Generic Interface</h2>
+
+    <pre><code><span class="keyword">interface</span>
+<span class="type">Repository</span>&lt;<span class="type">T</span>&gt; {
+
+    <span class="keyword">void</span> <span class="method">save</span>(<span class="type">T</span> item);
+
+    <span class="type">T</span> <span class="method">find</span>();
+}</code></pre>
+
+    <pre><code><span class="keyword">class</span> <span class="type">StudentRepository</span>
+        <span class="keyword">implements</span>
+        <span class="type">Repository</span>&lt;<span class="type">Student</span>&gt; {
+
+    <span class="keyword">public void</span> <span class="method">save</span>(<span class="type">Student</span> s) {
+        System.out.println(<span class="string">"Saved Student"</span>);
+    }
+
+    <span class="keyword">public</span> <span class="type">Student</span> <span class="method">find</span>() {
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="type">Student</span>();
+    }
+}</code></pre>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     22
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">22 / 40</div>
+
+    <h2>Functional Interfaces</h2>
+
+    <p class="lead">
+        A functional interface contains exactly one abstract method.
+    </p>
+
+    <pre><code><span class="annotation">@FunctionalInterface</span>
+<span class="keyword">interface</span> <span class="type">Greeting</span> {
+
+    <span class="keyword">void</span> <span class="method">sayHello</span>();
+}</code></pre>
+
+    <div class="grid grid-2">
+
+        <div class="card">
+            <h3>Single Abstract Method</h3>
+            <p>
+                Commonly shortened to SAM interface.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>Lambda Compatible</h3>
+            <p>
+                A lambda expression can implement the interface.
+            </p>
+        </div>
+
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     23
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">23 / 40</div>
+
+    <h2>Lambda Expressions</h2>
+
+    <p class="lead">
+        A lambda is a compact way to represent behavior.
+    </p>
+
+    <pre><code><span class="type">Greeting</span> g = () -&gt; {
+    System.out.println(<span class="string">"Hello Java"</span>);
+};
+
+g.sayHello();</code></pre>
+
+    <div class="diagram">
+
+        <div class="node">()</div>
+
+        <div class="arrow">→</div>
+
+        <div class="node">-&gt;</div>
+
+        <div class="arrow">→</div>
+
+        <div class="node">Behavior</div>
+
+    </div>
+
+    <div class="callout">
+        Lambda syntax has a parameter section, an arrow,
+        and an expression or block body.
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     24
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">24 / 40</div>
+
+    <h2>Lambda Syntax</h2>
+
+    <table class="table">
+
+        <thead>
+            <tr>
+                <th>Form</th>
+                <th>Meaning</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            <tr>
+                <td><code>() -&gt; System.out.println("Hi")</code></td>
+                <td>No parameters</td>
+            </tr>
+
+            <tr>
+                <td><code>x -&gt; x * x</code></td>
+                <td>One parameter</td>
+            </tr>
+
+            <tr>
+                <td><code>(x, y) -&gt; x + y</code></td>
+                <td>Two parameters</td>
+            </tr>
+
+            <tr>
+                <td><code>(x, y) -&gt; { return x + y; }</code></td>
+                <td>Block body</td>
+            </tr>
+
+        </tbody>
+
+    </table>
+
+    <div class="interactive">
+
+        <div class="question">
+            Which lambda represents a function that adds two numbers?
+        </div>
+
+        <div class="choices">
+
+            <button class="choice" data-correct="false">
+                x -&gt; x + 2
+            </button>
+
+            <button class="choice" data-correct="true">
+                (x, y) -&gt; x + y
+            </button>
+
+            <button class="choice" data-correct="false">
+                () -&gt; x + y
+            </button>
+
+        </div>
+
+        <div class="answer">
+            Correct.
+            <code>(x, y) -&gt; x + y</code> accepts two parameters.
+        </div>
+
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     25
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">25 / 40</div>
+
+    <h2>Lambda + Functional Interface</h2>
+
+    <pre><code><span class="annotation">@FunctionalInterface</span>
+<span class="keyword">interface</span> <span class="type">Operation</span> {
+
+    <span class="keyword">int</span> <span class="method">calculate</span>(
+        <span class="keyword">int</span> a,
+        <span class="keyword">int</span> b
+    );
+}
+
+<span class="type">Operation</span> add =
+    (a, b) -&gt; a + b;
+
+<span class="type">Operation</span> multiply =
+    (a, b) -&gt; a * b;
+
+System.out.println(add.calculate(<span class="number">5</span>, <span class="number">3</span>));
+System.out.println(multiply.calculate(<span class="number">5</span>, <span class="number">3</span>));</code></pre>
+
+    <div class="terminal">
+        8<br>
+        15
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     26
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">26 / 40</div>
+
+    <h2>Lambda with Parameters</h2>
+
+    <pre><code><span class="annotation">@FunctionalInterface</span>
+<span class="keyword">interface</span> <span class="type">Validator</span> {
+
+    <span class="keyword">boolean</span>
+    <span class="method">validate</span>(<span class="type">String</span> value);
+}
+
+<span class="type">Validator</span> longText =
+    text -&gt; text.length() &gt; <span class="number">5</span>;
+
+System.out.println(
+    longText.validate(<span class="string">"Inheritance"</span>)
+);</code></pre>
+
+    <div class="callout">
+        The compiler infers the parameter type from the functional interface.
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     27
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">27 / 40</div>
+
+    <h2>Predicate, Consumer, Function</h2>
+
+    <div class="grid grid-3">
+
+        <div class="card">
+
+            <h3>Predicate&lt;T&gt;</h3>
+
+            <p>
+                Accepts T and returns boolean.
+            </p>
+
+            <pre><code>x -&gt; x &gt; 10</code></pre>
+
+        </div>
+
+        <div class="card">
+
+            <h3>Consumer&lt;T&gt;</h3>
+
+            <p>
+                Accepts T and returns nothing.
+            </p>
+
+            <pre><code>x -&gt;
+System.out.println(x)</code></pre>
+
+        </div>
+
+        <div class="card">
+
+            <h3>Function&lt;T,R&gt;</h3>
+
+            <p>
+                Accepts T and returns R.
+            </p>
+
+            <pre><code>x -&gt;
+x.length()</code></pre>
+
+        </div>
+
+    </div>
+
+    <div class="callout">
+        These are examples from Java's standard functional interface library.
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     28
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">28 / 40</div>
+
+    <h2>Collections + Lambdas</h2>
+
+    <pre><code><span class="type">List</span>&lt;<span class="type">String</span>&gt; names =
+    <span class="type">Arrays</span>.asList(
+        <span class="string">"Aman"</span>,
+        <span class="string">"Riya"</span>,
+        <span class="string">"Kabir"</span>
+    );
+
+names.forEach(
+    name -&gt; System.out.println(name)
+);</code></pre>
+
+    <div class="terminal">
+        Aman<br>
+        Riya<br>
+        Kabir
+    </div>
+
+    <div class="callout">
+        Lambdas are particularly useful when APIs expect functional interfaces.
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     29
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">29 / 40</div>
+
+    <h2>Lambda + Sorting</h2>
+
+    <pre><code><span class="type">List</span>&lt;<span class="type">String</span>&gt; names =
+    <span class="type">Arrays</span>.asList(
+        <span class="string">"Zoya"</span>,
+        <span class="string">"Aman"</span>,
+        <span class="string">"Riya"</span>
+    );
+
+names.sort(
+    (a, b) -&gt; a.compareTo(b)
+);</code></pre>
+
+    <div class="callout">
+        The lambda provides the comparison behavior required by the sorting API.
+    </div>
+
+    <div class="interactive">
+
+        <div class="question">
+            What does the lambda represent here?
+        </div>
+
+        <div class="choices">
+
+            <button class="choice" data-correct="true">
+                Comparison behavior
+            </button>
+
+            <button class="choice" data-correct="false">
+                A new class
+            </button>
+
+            <button class="choice" data-correct="false">
+                A constructor
+            </button>
+
+        </div>
+
+        <div class="answer">
+            Correct. It supplies comparison behavior.
+        </div>
+
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     30
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">30 / 40</div>
+
+    <h2>Default Interface Methods</h2>
+
+    <p class="lead">
+        Interfaces can contain default instance methods with implementations.
+    </p>
+
+    <pre><code><span class="keyword">interface</span> <span class="type">Vehicle</span> {
+
+    <span class="keyword">void</span> <span class="method">start</span>();
+
+    <span class="keyword">default void</span> <span class="method">stop</span>() {
+        System.out.println(<span class="string">"Vehicle stops"</span>);
+    }
+}
+
+<span class="keyword">class</span> <span class="type">Car</span>
+        <span class="keyword">implements</span> <span class="type">Vehicle</span> {
+
+    <span class="keyword">public void</span> <span class="method">start</span>() {
+        System.out.println(<span class="string">"Car starts"</span>);
+    }
+}</code></pre>
+
+    <div class="callout">
+        Car automatically receives the default implementation of stop()
+        unless it overrides the method.
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     31
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">31 / 40</div>
+
+    <h2>Overriding a Default Method</h2>
+
+    <pre><code><span class="keyword">interface</span> <span class="type">Vehicle</span> {
+
+    <span class="keyword">default void</span> <span class="method">stop</span>() {
+        System.out.println(<span class="string">"Normal stop"</span>);
+    }
+}
+
+<span class="keyword">class</span> <span class="type">SportsCar</span>
+        <span class="keyword">implements</span> <span class="type">Vehicle</span> {
+
+    <span class="annotation">@Override</span>
+    <span class="keyword">public void</span> <span class="method">stop</span>() {
+        System.out.println(<span class="string">"Performance braking"</span>);
+    }
+}</code></pre>
+
+    <div class="terminal">
+        Performance braking
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     32
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">32 / 40</div>
+
+    <h2>Static Interface Methods</h2>
+
+    <pre><code><span class="keyword">interface</span> <span class="type">MathUtil</span> {
+
+    <span class="keyword">static int</span>
+    <span class="method">square</span>(<span class="keyword">int</span> x) {
+
+        <span class="keyword">return</span> x * x;
+    }
+}
+
+System.out.println(
+    <span class="type">MathUtil</span>.square(<span class="number">5</span>)
+);</code></pre>
+
+    <div class="callout">
+        Static interface methods are called through the interface name.
+    </div>
+
+    <div class="interactive">
+
+        <div class="question">
+            Which syntax is correct?
+        </div>
+
+        <div class="choices">
+
+            <button class="choice" data-correct="true">
+                MathUtil.square(5)
+            </button>
+
+            <button class="choice" data-correct="false">
+                object.square(5)
+            </button>
+
+        </div>
+
+        <div class="answer">
+            Correct. Static interface methods belong to the interface itself.
+        </div>
+
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     33
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">33 / 40</div>
+
+    <h2>Default vs Static Methods</h2>
+
+    <table class="table">
+
+        <thead>
+            <tr>
+                <th>Feature</th>
+                <th>Default</th>
+                <th>Static</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            <tr>
+                <td>Associated with</td>
+                <td>Implementing object</td>
+                <td>Interface</td>
+            </tr>
+
+            <tr>
+                <td>Call syntax</td>
+                <td><code>obj.method()</code></td>
+                <td><code>Interface.method()</code></td>
+            </tr>
+
+            <tr>
+                <td>Can be overridden?</td>
+                <td>Yes</td>
+                <td>No</td>
+            </tr>
+
+            <tr>
+                <td>Typical use</td>
+                <td>Reusable interface behavior</td>
+                <td>Utility/helper behavior</td>
+            </tr>
+
+        </tbody>
+
+    </table>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     34
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">34 / 40</div>
+
+    <h2>Interface Conflict Resolution</h2>
+
+    <pre><code><span class="keyword">interface</span> <span class="type">A</span> {
+
+    <span class="keyword">default void</span> <span class="method">show</span>() {
+        System.out.println(<span class="string">"A"</span>);
+    }
+}
+
+<span class="keyword">interface</span> <span class="type">B</span> {
+
+    <span class="keyword">default void</span> <span class="method">show</span>() {
+        System.out.println(<span class="string">"B"</span>);
+    }
+}
+
+<span class="keyword">class</span> <span class="type">C</span>
+        <span class="keyword">implements</span> <span class="type">A</span>, <span class="type">B</span> {
+
+    <span class="keyword">public void</span> <span class="method">show</span>() {
+        System.out.println(<span class="string">"C"</span>);
+    }
+}</code></pre>
+
+    <div class="callout warning">
+        When conflicting default methods exist, the implementing class
+        must resolve the conflict.
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     35
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">35 / 40</div>
+
+    <h2>Practical 1 — Generic Calculator</h2>
+
+    <div class="card">
+
+        <h3>Task</h3>
+
+        <ol>
+
+            <li>Create a functional interface called <code>Operation</code>.</li>
+
+            <li>Make it accept two integers and return an integer.</li>
+
+            <li>Create lambdas for:</li>
+
+            <li>Addition</li>
+
+            <li>Subtraction</li>
+
+            <li>Multiplication</li>
+
+            <li>Division</li>
+
+            <li>Pass the operation to a reusable method.</li>
+
+        </ol>
+
+    </div>
+
+    <pre><code><span class="keyword">static int</span>
+<span class="method">calculate</span>(
+    <span class="keyword">int</span> a,
+    <span class="keyword">int</span> b,
+    <span class="type">Operation</span> op
+) {
+
+    <span class="keyword">return</span> op.calculate(a, b);
+}</code></pre>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     36
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">36 / 40</div>
+
+    <h2>Practical 2 — Polymorphic Employee</h2>
+
+    <div class="card">
+
+        <h3>Task</h3>
+
+        <ol>
+
+            <li>Create an abstract class <code>Employee</code>.</li>
+
+            <li>Create subclasses <code>Developer</code> and <code>Manager</code>.</li>
+
+            <li>Override <code>calculateSalary()</code>.</li>
+
+            <li>Store objects in an <code>Employee[]</code>.</li>
+
+            <li>Use dynamic dispatch.</li>
+
+            <li>Use <code>instanceof</code> where a subtype-specific operation is required.</li>
+
+            <li>Avoid unnecessary explicit casting.</li>
+
+        </ol>
+
+    </div>
+
+    <div class="callout">
+        Goal: demonstrate runtime polymorphism rather than a large
+        chain of type-checking statements.
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     37
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">37 / 40</div>
+
+    <h2>Interactive Quiz — Polymorphism</h2>
+
+    <div class="interactive">
+
+        <div class="question">
+            Given:
+            <code>Animal a = new Dog();</code>
+            <br>
+            Which object determines the overridden sound() implementation?
+        </div>
+
+        <div class="choices">
+
+            <button class="choice" data-correct="false">
+                Animal reference
+            </button>
+
+            <button class="choice" data-correct="true">
+                Dog object
+            </button>
+
+        </div>
+
+        <div class="answer">
+            Correct. Runtime dispatch uses the actual object.
+        </div>
+
+    </div>
+
+    <div class="interactive">
+
+        <div class="question">
+            Which conversion is normally implicit?
+        </div>
+
+        <div class="choices">
+
+            <button class="choice" data-correct="true">
+                Dog → Animal
+            </button>
+
+            <button class="choice" data-correct="false">
+                Animal → Dog
+            </button>
+
+        </div>
+
+        <div class="answer">
+            Correct. Dog to Animal is upcasting.
+        </div>
+
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     38
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">38 / 40</div>
+
+    <h2>Interactive Quiz — Generics + Lambdas</h2>
+
+    <div class="interactive">
+
+        <div class="question">
+            What does <code>Box&lt;String&gt;</code> communicate?
+        </div>
+
+        <div class="choices">
+
+            <button class="choice" data-correct="true">
+                Box is parameterized with String
+            </button>
+
+            <button class="choice" data-correct="false">
+                Box extends String
+            </button>
+
+            <button class="choice" data-correct="false">
+                String is a superclass of Box
+            </button>
+
+        </div>
+
+        <div class="answer">
+            Correct. String is the type argument for Box.
+        </div>
+
+    </div>
+
+    <div class="interactive">
+
+        <div class="question">
+            Which interface is lambda-friendly?
+        </div>
+
+        <div class="choices">
+
+            <button class="choice" data-correct="false">
+                Interface with five abstract methods
+            </button>
+
+            <button class="choice" data-correct="true">
+                Functional interface with one abstract method
+            </button>
+
+        </div>
+
+        <div class="answer">
+            Correct. A functional interface has one abstract method.
+        </div>
+
+    </div>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     39
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">39 / 40</div>
+
+    <h2>Sem 3 Cheat Sheet</h2>
+
+    <table class="table">
+
+        <thead>
+            <tr>
+                <th>Concept</th>
+                <th>Remember</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            <tr>
+                <td>Dynamic binding</td>
+                <td>Overridden instance method selected at runtime.</td>
+            </tr>
+
+            <tr>
+                <td>Overloading</td>
+                <td>Same method name, different parameter list.</td>
+            </tr>
+
+            <tr>
+                <td>Compile-time polymorphism</td>
+                <td>Typically method overloading.</td>
+            </tr>
+
+            <tr>
+                <td>Runtime polymorphism</td>
+                <td>Overriding + dynamic dispatch.</td>
+            </tr>
+
+            <tr>
+                <td>Upcasting</td>
+                <td>Subclass reference → superclass reference.</td>
+            </tr>
+
+            <tr>
+                <td>Downcasting</td>
+                <td>Superclass reference → subclass reference.</td>
+            </tr>
+
+            <tr>
+                <td>instanceof</td>
+                <td>Tests runtime type compatibility.</td>
+            </tr>
+
+            <tr>
+                <td>Generics</td>
+                <td>Reusable type-safe code.</td>
+            </tr>
+
+            <tr>
+                <td>Lambda</td>
+                <td>Compact implementation of functional behavior.</td>
+            </tr>
+
+            <tr>
+                <td>Functional interface</td>
+                <td>Exactly one abstract method.</td>
+            </tr>
+
+            <tr>
+                <td>Default method</td>
+                <td>Interface instance method with implementation.</td>
+            </tr>
+
+            <tr>
+                <td>Static interface method</td>
+                <td>Called using interface name.</td>
+            </tr>
+
+        </tbody>
+
+    </table>
+
+</div>
+</section>
+
+
+<!-- =========================================================
+     40
+========================================================= -->
+
+<section class="slide">
+<div class="slide-inner">
+
+    <div class="eyebrow">40 / 40</div>
+
+    <h2>Exit Ticket + Assignment</h2>
+
+    <div class="grid grid-2">
+
+        <div class="card">
+
+            <h3>Explain</h3>
+
+            <ol>
+
+                <li>
+                    What is dynamic binding?
+                </li>
+
+                <li>
+                    How does overloading differ from overriding?
+                </li>
+
+                <li>
+                    Why can unsafe downcasting fail?
+                </li>
+
+                <li>
+                    What problem do generics solve?
+                </li>
+
+                <li>
+                    Why must a lambda target a functional interface?
+                </li>
+
+                <li>
+                    What is the difference between default and static interface methods?
+                </li>
+
+            </ol>
+
+        </div>
+
+        <div class="card">
+
+            <h3>Assignment</h3>
+
+            <ol>
+
+                <li>
+                    Build an Employee hierarchy demonstrating runtime polymorphism.
+                </li>
+
+                <li>
+                    Add at least one overloaded method.
+                </li>
+
+                <li>
+                    Demonstrate upcasting and safe downcasting.
+                </li>
+
+                <li>
+                    Use <code>instanceof</code>.
+                </li>
+
+                <li>
+                    Build one generic class.
+                </li>
+
+                <li>
+                    Create one functional interface.
+                </li>
+
+                <li>
+                    Implement it using a lambda.
+                </li>
+
+                <li>
+                    Demonstrate one default and one static interface method.
+                </li>
+
+            </ol>
+
+        </div>
+
+    </div>
+
+    <div class="callout">
+
+        <strong>Final mental model:</strong>
+        Overloading resolves behavior at compile time.
+        Overriding enables runtime polymorphism.
+        Casting changes the reference view.
+        Generics parameterize types.
+        Lambdas package behavior.
+
+    </div>
+
+    <div style="margin-top:24px">
+
+        <span class="tag">BIND</span>
+        <span class="tag">CAST</span>
+        <span class="tag">GENERIC</span>
+        <span class="tag">LAMBDA</span>
+        <span class="tag">FUNCTIONAL</span>
+        <span class="tag">DESIGN</span>
+
+    </div>
+
+</div>
+</section>
+
+</div>
+
+
+<div class="footer">
+
+    <div class="hint">
+        ← → Navigate · Space = Next · Home = First · End = Last · F = Fullscreen
+    </div>
+
+    <div class="footer-controls">
+
+        <button class="btn" id="prevBtn">
+            ◀ PREV
+        </button>
+
+        <button class="btn" id="nextBtn">
+            NEXT ▶
+        </button>
+
+    </div>
+
+</div>
+
+</main>
+
+</div>
+
+
+<script>
+
+/* ============================================================
+   MATRIX RAIN
+============================================================ */
+
+const canvas = document.getElementById("matrix");
+const ctx = canvas.getContext("2d");
+
+let width = canvas.width = window.innerWidth;
+let height = canvas.height = window.innerHeight;
+
+const chars =
+    "01ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz{}[]<>/\\\\$#@%&*+=-";
+
+const fontSize = 14;
+
+let columns = Math.floor(width / fontSize);
+
+let drops = Array(columns).fill(1);
+
+function matrixRain() {
+
+    ctx.fillStyle = "rgba(0,0,0,0.075)";
+    ctx.fillRect(0,0,width,height);
+
+    ctx.fillStyle = "#00ff66";
+
+    ctx.font = fontSize + "px monospace";
+
+    for(let i = 0; i < drops.length; i++) {
+
+        const text =
+            chars.charAt(
+                Math.floor(Math.random() * chars.length)
+            );
+
+        ctx.fillText(
+            text,
+            i * fontSize,
+            drops[i] * fontSize
+        );
+
+        if(
+            drops[i] * fontSize > height &&
+            Math.random() > 0.975
+        ) {
+            drops[i] = 0;
+        }
+
+        drops[i]++;
+    }
+}
+
+setInterval(matrixRain,55);
+
+window.addEventListener("resize", () => {
+
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+
+    columns = Math.floor(width / fontSize);
+
+    drops = Array(columns).fill(1);
+
+});
+
+
+/* ============================================================
+   SLIDE NAVIGATION
+============================================================ */
+
+const slides =
+    [...document.querySelectorAll(".slide")];
+
+const counter =
+    document.getElementById("counter");
+
+const progress =
+    document.getElementById("progress");
+
+let current = 0;
+
+function showSlide(index) {
+
+    current =
+        Math.max(
+            0,
+            Math.min(index, slides.length - 1)
+        );
+
+    slides.forEach((slide, i) => {
+
+        slide.classList.toggle(
+            "active",
+            i === current
+        );
+
+    });
+
+    counter.textContent =
+        String(current + 1).padStart(2,"0")
+        + " / "
+        + String(slides.length).padStart(2,"0");
+
+    progress.style.width =
+        (((current + 1) / slides.length) * 100)
+        + "%";
+
+    document.getElementById("prevBtn").disabled =
+        current === 0;
+
+    document.getElementById("nextBtn").disabled =
+        current === slides.length - 1;
+
+    slides[current].scrollTop = 0;
+}
+
+function nextSlide() {
+    showSlide(current + 1);
+}
+
+function prevSlide() {
+    showSlide(current - 1);
+}
+
+document
+    .getElementById("nextBtn")
+    .addEventListener("click", nextSlide);
+
+document
+    .getElementById("prevBtn")
+    .addEventListener("click", prevSlide);
+
+
+/* ============================================================
+   KEYBOARD NAVIGATION
+============================================================ */
+
+document.addEventListener("keydown", (e) => {
+
+    if(
+        e.target.tagName === "INPUT" ||
+        e.target.tagName === "TEXTAREA"
+    ) {
+        return;
+    }
+
+    if(
+        e.key === "ArrowRight" ||
+        e.key === "PageDown" ||
+        e.key === " "
+    ) {
+
+        e.preventDefault();
+
+        nextSlide();
+    }
+
+    if(
+        e.key === "ArrowLeft" ||
+        e.key === "PageUp"
+    ) {
+
+        e.preventDefault();
+
+        prevSlide();
+    }
+
+    if(e.key === "Home") {
+
+        e.preventDefault();
+
+        showSlide(0);
+    }
+
+    if(e.key === "End") {
+
+        e.preventDefault();
+
+        showSlide(slides.length - 1);
+    }
+
+    if(e.key.toLowerCase() === "f") {
+
+        toggleFullscreen();
+    }
+
+});
+
+
+/* ============================================================
+   FULLSCREEN
+============================================================ */
+
+function toggleFullscreen() {
+
+    if(!document.fullscreenElement) {
+
+        document.documentElement
+            .requestFullscreen()
+            .catch(() => {});
+
+    } else {
+
+        document.exitFullscreen()
+            .catch(() => {});
+
+    }
+}
+
+document
+    .getElementById("fullscreenBtn")
+    .addEventListener("click", toggleFullscreen);
+
+
+/* ============================================================
+   MCQ INTERACTION
+============================================================ */
+
+document
+    .querySelectorAll(".choices")
+    .forEach(group => {
+
+        const buttons =
+            group.querySelectorAll(".choice");
+
+        const answer =
+            group.parentElement.querySelector(".answer");
+
+        buttons.forEach(button => {
+
+            button.addEventListener("click", () => {
+
+                buttons.forEach(btn => {
+
+                    btn.classList.remove(
+                        "correct",
+                        "wrong"
+                    );
+
+                });
+
+                if(
+                    button.dataset.correct === "true"
+                ) {
+
+                    button.classList.add("correct");
+
+                    if(answer) {
+                        answer.classList.add("show");
+                    }
+
+                } else {
+
+                    button.classList.add("wrong");
+
+                }
+
+            });
+
+        });
+
+    });
+
+
+/* ============================================================
+   REVEAL ANSWERS
+============================================================ */
+
+function toggleAnswer(button) {
+
+    const answer =
+        button.nextElementSibling;
+
+    if(!answer) return;
+
+    answer.classList.toggle("show");
+
+    button.textContent =
+        answer.classList.contains("show")
+            ? "Hide solution"
+            : "Reveal solution";
+}
+
+
+/* ============================================================
+   COPY CODE
+============================================================ */
+
+document
+    .querySelectorAll("pre")
+    .forEach(pre => {
+
+        const code =
+            pre.querySelector("code");
+
+        if(!code) return;
+
+        const copyButton =
+            document.createElement("button");
+
+        copyButton.className =
+            "copy-btn";
+
+        copyButton.textContent =
+            "COPY";
+
+        copyButton.addEventListener(
+            "click",
+            async () => {
+
+                try {
+
+                    await navigator.clipboard.writeText(
+                        code.innerText
+                    );
+
+                    copyButton.textContent =
+                        "COPIED";
+
+                    setTimeout(() => {
+
+                        copyButton.textContent =
+                            "COPY";
+
+                    },1200);
+
+                } catch {
+
+                    copyButton.textContent =
+                        "ERROR";
+                }
+
+            }
+        );
+
+        pre.appendChild(copyButton);
+
+    });
+
+
+/* ============================================================
+   TOUCH / SWIPE
+============================================================ */
+
+let touchStartX = null;
+
+document.addEventListener(
+    "touchstart",
+    e => {
+
+        touchStartX =
+            e.changedTouches[0].clientX;
+
+    }
+);
+
+document.addEventListener(
+    "touchend",
+    e => {
+
+        if(touchStartX === null) {
+            return;
+        }
+
+        const endX =
+            e.changedTouches[0].clientX;
+
+        const delta =
+            endX - touchStartX;
+
+        if(Math.abs(delta) > 60) {
+
+            if(delta < 0) {
+                nextSlide();
+            } else {
+                prevSlide();
+            }
+
+        }
+
+        touchStartX = null;
+
+    }
+);
+
+
+/* ============================================================
+   INITIALIZE
+============================================================ */
+
+showSlide(0);
+
+</script>
+
+</body>
+</html>

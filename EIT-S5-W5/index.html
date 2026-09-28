@@ -1,0 +1,2625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Week 5 — Inheritance & Polymorphism | Java</title>
+
+<style>
+    :root {
+        --bg: #020403;
+        --panel: rgba(3, 12, 7, 0.88);
+        --panel-2: rgba(5, 18, 10, 0.95);
+        --green: #00ff66;
+        --green-soft: #79ffae;
+        --green-dark: #0a6b35;
+        --text: #d9ffe6;
+        --muted: #7ca78b;
+        --danger: #ff5d73;
+        --warning: #ffd166;
+        --border: rgba(0, 255, 102, 0.30);
+        --shadow: 0 0 30px rgba(0, 255, 102, 0.08);
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    html,
+    body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Inter, Segoe UI, Arial, sans-serif;
+    }
+
+    body {
+        position: relative;
+    }
+
+    #matrix {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        opacity: 0.18;
+        pointer-events: none;
+    }
+
+    .scanlines {
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        background:
+            repeating-linear-gradient(
+                to bottom,
+                rgba(255,255,255,0.015) 0,
+                rgba(255,255,255,0.015) 1px,
+                transparent 1px,
+                transparent 4px
+            );
+        mix-blend-mode: screen;
+    }
+
+    .vignette {
+        position: fixed;
+        inset: 0;
+        z-index: 2;
+        pointer-events: none;
+        background: radial-gradient(
+            ellipse at center,
+            transparent 40%,
+            rgba(0,0,0,0.5) 100%
+        );
+    }
+
+    .app {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .topbar {
+        height: 64px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        background: rgba(0,0,0,0.55);
+        backdrop-filter: blur(8px);
+        flex-shrink: 0;
+    }
+
+    .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        color: var(--green);
+        text-transform: uppercase;
+        font-size: 13px;
+    }
+
+    .brand::before {
+        content: ">";
+        font-size: 21px;
+    }
+
+    .meta {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        color: var(--muted);
+        font-size: 12px;
+    }
+
+    .btn {
+        border: 1px solid var(--border);
+        background: rgba(0, 255, 102, 0.05);
+        color: var(--green);
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 700;
+        transition: 0.2s ease;
+    }
+
+    .btn:hover {
+        background: rgba(0, 255, 102, 0.13);
+        box-shadow: 0 0 15px rgba(0,255,102,0.14);
+    }
+
+    .progress-wrap {
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: rgba(0,255,102,0.06);
+    }
+
+    .progress {
+        height: 100%;
+        width: 0%;
+        background: var(--green);
+        box-shadow: 0 0 12px var(--green);
+        transition: width 0.2s ease;
+    }
+
+    .stage {
+        flex: 1;
+        position: relative;
+        min-height: 0;
+    }
+
+    .slides {
+        width: 100%;
+        height: 100%;
+        position: relative;
+    }
+
+    .slide {
+        position: absolute;
+        inset: 0;
+        display: none;
+        overflow-y: auto;
+        padding: 34px 7vw 100px;
+    }
+
+    .slide.active {
+        display: block;
+        animation: appear 0.35s ease;
+    }
+
+    @keyframes appear {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .slide-inner {
+        max-width: 1250px;
+        margin: 0 auto;
+    }
+
+    .eyebrow {
+        color: var(--green);
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        font-size: 11px;
+        font-weight: 800;
+        margin-bottom: 13px;
+    }
+
+    h1,
+    h2,
+    h3 {
+        font-family: "Courier New", monospace;
+        color: var(--green);
+    }
+
+    h1 {
+        font-size: clamp(34px, 5vw, 68px);
+        line-height: 0.98;
+        margin-bottom: 18px;
+        text-shadow: 0 0 22px rgba(0,255,102,0.15);
+    }
+
+    h2 {
+        font-size: clamp(27px, 3.8vw, 48px);
+        margin-bottom: 18px;
+    }
+
+    h3 {
+        font-size: 19px;
+        margin-bottom: 9px;
+    }
+
+    p {
+        line-height: 1.65;
+        color: var(--text);
+    }
+
+    .lead {
+        font-size: 19px;
+        max-width: 920px;
+        color: #bcffd2;
+    }
+
+    .muted {
+        color: var(--muted);
+    }
+
+    .grid {
+        display: grid;
+        gap: 18px;
+    }
+
+    .grid-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .card {
+        background: linear-gradient(
+            145deg,
+            rgba(4, 18, 9, 0.94),
+            rgba(2, 8, 4, 0.92)
+        );
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: var(--shadow);
+    }
+
+    .card strong {
+        color: var(--green-soft);
+    }
+
+    .tag {
+        display: inline-block;
+        border: 1px solid var(--border);
+        color: var(--green);
+        border-radius: 999px;
+        padding: 5px 10px;
+        margin: 3px 4px 3px 0;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        background: rgba(0,255,102,0.04);
+    }
+
+    ul,
+    ol {
+        padding-left: 22px;
+    }
+
+    li {
+        margin: 8px 0;
+        line-height: 1.5;
+    }
+
+    code,
+    pre {
+        font-family: "Courier New", monospace;
+    }
+
+    pre {
+        margin-top: 15px;
+        background: #010201;
+        border: 1px solid rgba(0,255,102,0.2);
+        border-radius: 9px;
+        padding: 17px;
+        overflow-x: auto;
+        line-height: 1.55;
+        color: #c9ffd9;
+        position: relative;
+    }
+
+    .copy-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        padding: 5px 8px;
+        font-size: 10px;
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        background: rgba(0,255,102,0.05);
+        color: var(--green);
+        cursor: pointer;
+    }
+
+    .keyword { color: #8effb5; }
+    .type { color: #b7ffd0; }
+    .string { color: #f4ff89; }
+    .comment { color: #568a67; }
+    .number { color: #a5d8ff; }
+    .method { color: #b5ffcc; }
+
+    .callout {
+        border-left: 4px solid var(--green);
+        background: rgba(0,255,102,0.06);
+        padding: 15px 17px;
+        border-radius: 0 8px 8px 0;
+        margin: 18px 0;
+    }
+
+    .warning {
+        border-left-color: var(--warning);
+        background: rgba(255,209,102,0.07);
+    }
+
+    .danger {
+        border-left-color: var(--danger);
+        background: rgba(255,93,115,0.07);
+    }
+
+    .diagram {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 9px;
+        margin: 22px 0;
+    }
+
+    .node {
+        min-width: 120px;
+        text-align: center;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 13px;
+        color: var(--green-soft);
+        background: rgba(0,255,102,0.04);
+        font-family: "Courier New", monospace;
+        font-weight: 800;
+    }
+
+    .arrow {
+        color: var(--green);
+        font-size: 22px;
+    }
+
+    .interactive {
+        margin-top: 22px;
+        background: rgba(0, 255, 102, 0.035);
+        border: 1px dashed rgba(0,255,102,0.33);
+        border-radius: 10px;
+        padding: 18px;
+    }
+
+    .question {
+        color: #caffd8;
+        font-weight: 700;
+        margin-bottom: 12px;
+    }
+
+    .choices {
+        display: flex;
+        gap: 9px;
+        flex-wrap: wrap;
+    }
+
+    .choice {
+        padding: 9px 12px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        cursor: pointer;
+        background: rgba(0,255,102,0.04);
+        color: var(--text);
+    }
+
+    .choice:hover {
+        background: rgba(0,255,102,0.12);
+    }
+
+    .choice.correct {
+        border-color: var(--green);
+        background: rgba(0,255,102,0.14);
+        color: var(--green-soft);
+    }
+
+    .choice.wrong {
+        border-color: var(--danger);
+        background: rgba(255,93,115,0.11);
+        color: #ffb1bb;
+    }
+
+    .answer {
+        display: none;
+        margin-top: 12px;
+        padding: 11px;
+        border-radius: 6px;
+        background: rgba(0,255,102,0.06);
+        border: 1px solid rgba(0,255,102,0.16);
+        color: var(--green-soft);
+    }
+
+    .answer.show {
+        display: block;
+    }
+
+    .reveal {
+        border: 1px solid var(--border);
+        color: var(--green);
+        background: rgba(0,255,102,0.04);
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+
+    .terminal {
+        background: #000;
+        border: 1px solid rgba(0,255,102,0.25);
+        border-radius: 9px;
+        padding: 16px;
+        color: #76ff9c;
+        font-family: "Courier New", monospace;
+        margin-top: 15px;
+    }
+
+    .terminal::before {
+        content: "$ java Demo";
+        display: block;
+        color: #4b8c61;
+        margin-bottom: 7px;
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 14px;
+        overflow: hidden;
+        border-radius: 8px;
+    }
+
+    .table th,
+    .table td {
+        border: 1px solid rgba(0,255,102,0.16);
+        padding: 10px 12px;
+        text-align: left;
+        vertical-align: top;
+    }
+
+    .table th {
+        color: var(--green);
+        background: rgba(0,255,102,0.07);
+    }
+
+    .table td {
+        color: #cbfbd7;
+    }
+
+    .counter {
+        font-family: "Courier New", monospace;
+        color: var(--green);
+        font-weight: 800;
+        min-width: 70px;
+        text-align: right;
+    }
+
+    .footer {
+        position: absolute;
+        bottom: 20px;
+        left: 7vw;
+        right: 7vw;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        pointer-events: none;
+    }
+
+    .footer-controls {
+        display: flex;
+        gap: 8px;
+        pointer-events: auto;
+    }
+
+    .hint {
+        color: #4f7c5d;
+        font-size: 11px;
+    }
+
+    .hero-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 30px;
+        align-items: center;
+        min-height: 70vh;
+    }
+
+    .matrix-box {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 25px;
+        background:
+            linear-gradient(
+                150deg,
+                rgba(0,255,102,0.08),
+                rgba(0,0,0,0.55)
+            );
+        box-shadow: 0 0 35px rgba(0,255,102,0.06);
+    }
+
+    .matrix-box .big {
+        font-size: clamp(70px, 10vw, 150px);
+        line-height: 0.9;
+        color: var(--green);
+        font-family: "Courier New", monospace;
+        font-weight: 900;
+        text-shadow: 0 0 35px rgba(0,255,102,0.17);
+    }
+
+    .split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .checklist li::marker {
+        color: var(--green);
+    }
+
+    @media (max-width: 900px) {
+        .grid-2,
+        .grid-3,
+        .hero-grid,
+        .split {
+            grid-template-columns: 1fr;
+        }
+
+        .slide {
+            padding: 28px 5vw 110px;
+        }
+
+        .topbar {
+            padding: 0 15px;
+        }
+
+        .meta .hint {
+            display: none;
+        }
+
+        .footer {
+            left: 5vw;
+            right: 5vw;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<canvas id="matrix"></canvas>
+<div class="scanlines"></div>
+<div class="vignette"></div>
+
+<div class="app">
+
+    <header class="topbar">
+        <div class="brand">JAVA // WEEK 05 // INHERITANCE + POLYMORPHISM</div>
+
+        <div class="meta">
+            <span>28 SEP — 04 OCT</span>
+            <span class="counter" id="counter">01 / 40</span>
+            <button class="btn" id="fullscreenBtn">FULLSCREEN</button>
+        </div>
+
+        <div class="progress-wrap">
+            <div class="progress" id="progress"></div>
+        </div>
+    </header>
+
+    <main class="stage">
+        <div class="slides" id="slides">
+
+            <!-- 01 -->
+            <section class="slide active">
+                <div class="slide-inner hero-grid">
+                    <div>
+                        <div class="eyebrow">Week 05 · Java Programming</div>
+                        <h1>Inheritance<br>&amp;<br>Polymorphism</h1>
+                        <p class="lead">
+                            Build reusable class hierarchies, override behavior,
+                            and understand how Java decides which method executes.
+                        </p>
+
+                        <div style="margin-top:22px">
+                            <span class="tag">Single</span>
+                            <span class="tag">Multilevel</span>
+                            <span class="tag">Hierarchical</span>
+                            <span class="tag">Hybrid</span>
+                            <span class="tag">Interfaces</span>
+                            <span class="tag">super</span>
+                            <span class="tag">Overriding</span>
+                            <span class="tag">Dynamic Dispatch</span>
+                        </div>
+                    </div>
+
+                    <div class="matrix-box">
+                        <div class="big">&lt;/&gt;</div>
+                        <p style="margin-top:15px">
+                            <strong>Core idea:</strong><br>
+                            One object can be accessed through different
+                            reference types, while the actual runtime object
+                            determines overridden behavior.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 02 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">01 / 40</div>
+                    <h2>Week Map</h2>
+
+                    <div class="grid grid-3">
+                        <div class="card">
+                            <h3>Concepts</h3>
+                            <p>
+                                Inheritance models, <code>super</code>,
+                                overriding, overloading, polymorphism,
+                                casting and <code>instanceof</code>.
+                            </p>
+                        </div>
+
+                        <div class="card">
+                            <h3>Implementation</h3>
+                            <p>
+                                Build class hierarchies with employees,
+                                shapes and interfaces.
+                            </p>
+                        </div>
+
+                        <div class="card">
+                            <h3>Practicals</h3>
+                            <p>
+                                Trace runtime behavior, debug casting
+                                errors and solve polymorphism challenges.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="callout">
+                        <strong>Learning sequence:</strong>
+                        superclass → subclass → reuse → overriding →
+                        reference types → runtime dispatch → practical design.
+                    </div>
+                </div>
+            </section>
+
+            <!-- 03 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">02 / 40</div>
+                    <h2>Learning Outcomes</h2>
+
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <h3>By the end, you should be able to:</h3>
+                            <ul class="checklist">
+                                <li>Explain why inheritance is used.</li>
+                                <li>Implement single, multilevel and hierarchical inheritance.</li>
+                                <li>Explain Java's limitation on class-based multiple inheritance.</li>
+                                <li>Use interfaces for multiple inheritance of type.</li>
+                            </ul>
+                        </div>
+
+                        <div class="card">
+                            <h3>Runtime skills</h3>
+                            <ul class="checklist">
+                                <li>Use <code>super</code>.</li>
+                                <li>Differentiate overloading and overriding.</li>
+                                <li>Trace dynamic method dispatch.</li>
+                                <li>Perform safe upcasting/downcasting.</li>
+                                <li>Use <code>instanceof</code>.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 04 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">03 / 40</div>
+                    <h2>What Is Inheritance?</h2>
+
+                    <p class="lead">
+                        Inheritance allows a new class to acquire accessible
+                        members and behavior from an existing class.
+                    </p>
+
+                    <div class="diagram">
+                        <div class="node">Vehicle</div>
+                        <div class="arrow">↓</div>
+                        <div class="node">Car</div>
+                        <div class="arrow">↓</div>
+                        <div class="node">ElectricCar</div>
+                    </div>
+
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <h3>Superclass</h3>
+                            <p>
+                                General class containing common state and
+                                behavior.
+                            </p>
+                            <pre><code><span class="keyword">class</span> <span class="type">Vehicle</span> {
+    <span class="type">String</span> brand;
+
+    <span class="keyword">void</span> <span class="method">start</span>() {
+        System.out.println(<span class="string">"Vehicle starts"</span>);
+    }
+}</code></pre>
+                        </div>
+
+                        <div class="card">
+                            <h3>Subclass</h3>
+                            <p>
+                                More specialized class that extends the
+                                superclass.
+                            </p>
+                            <pre><code><span class="keyword">class</span> <span class="type">Car</span>
+        <span class="keyword">extends</span> <span class="type">Vehicle</span> {
+
+    <span class="keyword">void</span> <span class="method">drive</span>() {
+        System.out.println(<span class="string">"Car drives"</span>);
+    }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 05 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">04 / 40</div>
+                    <h2>IS-A vs HAS-A</h2>
+
+                    <div class="split">
+                        <div class="card">
+                            <h3>IS-A → Inheritance</h3>
+                            <p>
+                                A <strong>Car is a Vehicle</strong>.
+                            </p>
+                            <pre><code><span class="keyword">class</span> <span class="type">Car</span>
+        <span class="keyword">extends</span> <span class="type">Vehicle</span> { }</code></pre>
+
+                            <div class="callout">
+                                Use inheritance when the subclass truly represents
+                                a specialized form of the superclass.
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3>HAS-A → Composition</h3>
+                            <p>
+                                A <strong>Car has an Engine</strong>.
+                            </p>
+                            <pre><code><span class="keyword">class</span> <span class="type">Car</span> {
+    <span class="type">Engine</span> engine;
+}</code></pre>
+
+                            <div class="callout warning">
+                                Do not use inheritance simply because code reuse
+                                is convenient.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="interactive">
+                        <div class="question">
+                            Which relation is represented by
+                            <code>class Dog extends Animal</code>?
+                        </div>
+
+                        <div class="choices">
+                            <button class="choice" data-correct="true">IS-A</button>
+                            <button class="choice" data-correct="false">HAS-A</button>
+                            <button class="choice" data-correct="false">USES-A</button>
+                        </div>
+
+                        <div class="answer">
+                            Correct — <code>Dog IS-A Animal</code>.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 06 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">05 / 40</div>
+                    <h2>Basic Inheritance Syntax</h2>
+
+                    <pre><code><span class="keyword">class</span> <span class="type">Parent</span> {
+    <span class="type">int</span> value;
+
+    <span class="keyword">void</span> <span class="method">show</span>() {
+        System.out.println(<span class="string">"Parent"</span>);
+    }
+}
+
+<span class="keyword">class</span> <span class="type">Child</span> <span class="keyword">extends</span> <span class="type">Parent</span> {
+    <span class="keyword">void</span> <span class="method">display</span>() {
+        System.out.println(value);
+    }
+}
+
+<span class="keyword">public class</span> <span class="type">Main</span> {
+    <span class="keyword">public static void</span> <span class="method">main</span>(<span class="type">String</span>[] args) {
+        <span class="type">Child</span> c = <span class="keyword">new</span> <span class="type">Child</span>();
+
+        c.value = <span class="number">10</span>;
+        c.show();
+        c.display();
+    }
+}</code></pre>
+
+                    <div class="grid grid-3" style="margin-top:18px">
+                        <div class="card">
+                            <h3>extends</h3>
+                            <p>Connects a class to one direct superclass.</p>
+                        </div>
+                        <div class="card">
+                            <h3>Reuse</h3>
+                            <p>Subclass can use accessible inherited members.</p>
+                        </div>
+                        <div class="card">
+                            <h3>Specialize</h3>
+                            <p>Subclass can add new behavior.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 07 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">06 / 40</div>
+                    <h2>Single Inheritance</h2>
+
+                    <p class="lead">
+                        One subclass inherits from one superclass.
+                    </p>
+
+                    <div class="diagram">
+                        <div class="node">Employee</div>
+                        <div class="arrow">→</div>
+                        <div class="node">Developer</div>
+                    </div>
+
+                    <pre><code><span class="keyword">class</span> <span class="type">Employee</span> {
+    <span class="type">String</span> name;
+
+    <span class="keyword">void</span> <span class="method">work</span>() {
+        System.out.println(<span class="string">"Employee works"</span>);
+    }
+}
+
+<span class="keyword">class</span> <span class="type">Developer</span>
+        <span class="keyword">extends</span> <span class="type">Employee</span> {
+
+    <span class="keyword">void</span> <span class="method">code</span>() {
+        System.out.println(<span class="string">"Developer codes"</span>);
+    }
+}</code></pre>
+
+                    <div class="callout">
+                        <strong>Relationship:</strong>
+                        Developer inherits the accessible state and behavior
+                        of Employee and adds specialized behavior.
+                    </div>
+                </div>
+            </section>
+
+            <!-- 08 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">07 / 40</div>
+                    <h2>Single Inheritance — Practical</h2>
+
+                    <pre><code><span class="keyword">class</span> <span class="type">Person</span> {
+    <span class="type">String</span> name;
+
+    <span class="keyword">void</span> <span class="method">introduce</span>() {
+        System.out.println(<span class="string">"I am "</span> + name);
+    }
+}
+
+<span class="keyword">class</span> <span class="type">Student</span>
+        <span class="keyword">extends</span> <span class="type">Person</span> {
+
+    <span class="type">int</span> rollNo;
+
+    <span class="keyword">void</span> <span class="method">study</span>() {
+        System.out.println(<span class="string">"Studying Java"</span>);
+    }
+}</code></pre>
+
+                    <div class="interactive">
+                        <div class="question">
+                            Write the statement that creates a Student object and
+                            assigns the name <code>"Aman"</code>.
+                        </div>
+
+                        <button class="reveal"
+                                onclick="toggleAnswer(this)">
+                            Reveal solution
+                        </button>
+
+                        <div class="answer">
+                            <code>Student s = new Student();</code><br>
+                            <code>s.name = "Aman";</code>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 09 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">08 / 40</div>
+                    <h2>Multilevel Inheritance</h2>
+
+                    <p class="lead">
+                        Inheritance continues through multiple levels.
+                    </p>
+
+                    <div class="diagram">
+                        <div class="node">Person</div>
+                        <div class="arrow">↓</div>
+                        <div class="node">Employee</div>
+                        <div class="arrow">↓</div>
+                        <div class="node">Manager</div>
+                    </div>
+
+                    <pre><code><span class="keyword">class</span> <span class="type">Person</span> {
+    <span class="keyword">void</span> <span class="method">eat</span>() {
+        System.out.println(<span class="string">"Eating"</span>);
+    }
+}
+
+<span class="keyword">class</span> <span class="type">Employee</span>
+        <span class="keyword">extends</span> <span class="type">Person</span> {
+
+    <span class="keyword">void</span> <span class="method">work</span>() {
+        System.out.println(<span class="string">"Working"</span>);
+    }
+}
+
+<span class="keyword">class</span> <span class="type">Manager</span>
+        <span class="keyword">extends</span> <span class="type">Employee</span> {
+
+    <span class="keyword">void</span> <span class="method">manage</span>() {
+        System.out.println(<span class="string">"Managing"</span>);
+    }
+}</code></pre>
+                </div>
+            </section>
+
+            <!-- 10 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">09 / 40</div>
+                    <h2>Multilevel — Practical Trace</h2>
+
+                    <pre><code><span class="type">Manager</span> m = <span class="keyword">new</span> <span class="type">Manager</span>();
+
+m.eat();
+m.work();
+m.manage();</code></pre>
+
+                    <div class="terminal">
+                        Eating<br>
+                        Working<br>
+                        Managing
+                    </div>
+
+                    <div class="callout">
+                        The Manager object can access inherited behavior from both
+                        Employee and Person, provided the members are accessible.
+                    </div>
+
+                    <div class="interactive">
+                        <div class="question">
+                            Which class directly defines <code>manage()</code>?
+                        </div>
+
+                        <div class="choices">
+                            <button class="choice" data-correct="false">Person</button>
+                            <button class="choice" data-correct="false">Employee</button>
+                            <button class="choice" data-correct="true">Manager</button>
+                        </div>
+
+                        <div class="answer">
+                            Correct. <code>manage()</code> is declared in Manager.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 11 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">10 / 40</div>
+                    <h2>Hierarchical Inheritance</h2>
+
+                    <p class="lead">
+                        Multiple subclasses inherit from the same superclass.
+                    </p>
+
+                    <div class="diagram">
+                        <div class="node">Shape</div>
+                        <div class="arrow">↓</div>
+                        <div class="node">Circle</div>
+                        <div class="node">Rectangle</div>
+                        <div class="node">Triangle</div>
+                    </div>
+
+                    <pre><code><span class="keyword">class</span> <span class="type">Shape</span> {
+    <span class="keyword">void</span> <span class="method">draw</span>() {
+        System.out.println(<span class="string">"Drawing shape"</span>);
+    }
+}
+
+<span class="keyword">class</span> <span class="type">Circle</span>
+        <span class="keyword">extends</span> <span class="type">Shape</span> { }
+
+<span class="keyword">class</span> <span class="type">Rectangle</span>
+        <span class="keyword">extends</span> <span class="type">Shape</span> { }
+
+<span class="keyword">class</span> <span class="type">Triangle</span>
+        <span class="keyword">extends</span> <span class="type">Shape</span> { }</code></pre>
+                </div>
+            </section>
+
+            <!-- 12 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">11 / 40</div>
+                    <h2>Hierarchical — Why It Helps</h2>
+
+                    <div class="grid grid-3">
+                        <div class="card">
+                            <h3>Common behavior</h3>
+                            <p>
+                                Put shared behavior in the superclass.
+                            </p>
+                        </div>
+                        <div class="card">
+                            <h3>Special behavior</h3>
+                            <p>
+                                Each child can add or override behavior.
+                            </p>
+                        </div>
+                        <div class="card">
+                            <h3>Polymorphism</h3>
+                            <p>
+                                All children can be referenced as the parent type.
+                            </p>
+                        </div>
+                    </div>
+
+                    <pre><code><span class="type">Shape</span> a = <span class="keyword">new</span> <span class="type">Circle</span>();
+<span class="type">Shape</span> b = <span class="keyword">new</span> <span class="type">Rectangle</span>();
+
+a.draw();
+b.draw();</code></pre>
+
+                    <div class="callout">
+                        This is the point where inheritance starts becoming
+                        useful for polymorphic design rather than mere code reuse.
+                    </div>
+                </div>
+            </section>
+
+            <!-- 13 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">12 / 40</div>
+                    <h2>Multiple Inheritance</h2>
+
+                    <p class="lead">
+                        A class inheriting from two concrete classes is not
+                        supported in Java.
+                    </p>
+
+                    <pre><code><span class="comment">// Not allowed in Java</span>
+
+<span class="keyword">class</span> <span class="type">A</span> {
+}
+
+<span class="keyword">class</span> <span class="type">B</span> {
+}
+
+<span class="keyword">class</span> <span class="type">C</span>
+        <span class="keyword">extends</span> <span class="type">A</span>, <span class="type">B</span> {
+}</code></pre>
+
+                    <div class="callout danger">
+                        <strong>Why?</strong>
+                        If both parents expose the same method, Java would face
+                        ambiguity about which implementation should be inherited.
+                    </div>
+
+                    <div class="interactive">
+                        <div class="question">
+                            Does Java allow a class to directly extend two classes?
+                        </div>
+
+                        <div class="choices">
+                            <button class="choice" data-correct="false">Yes</button>
+                            <button class="choice" data-correct="true">No</button>
+                        </div>
+
+                        <div class="answer">
+                            Correct. Java uses interfaces to support multiple inheritance
+                            of type.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 14 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">13 / 40</div>
+                    <h2>Multiple Inheritance via Interfaces</h2>
+
+                    <p class="lead">
+                        A Java class can implement multiple interfaces.
+                    </p>
+
+                    <pre><code><span class="keyword">interface</span> <span class="type">Printable</span> {
+    <span class="keyword">void</span> <span class="method">print</span>();
+}
+
+<span class="keyword">interface</span> <span class="type">Scannable</span> {
+    <span class="keyword">void</span> <span class="method">scan</span>();
+}
+
+<span class="keyword">class</span> <span class="type">Machine</span>
+        <span class="keyword">implements</span> <span class="type">Printable</span>, <span class="type">Scannable</span> {
+
+    <span class="keyword">public void</span> <span class="method">print</span>() {
+        System.out.println(<span class="string">"Printing"</span>);
+    }
+
+    <span class="keyword">public void</span> <span class="method">scan</span>() {
+        System.out.println(<span class="string">"Scanning"</span>);
+    }
+}</code></pre>
+
+                    <div class="callout">
+                        One class can implement several contracts while still
+                        extending only one class.
+                    </div>
+                </div>
+            </section>
+
+            <!-- 15 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">14 / 40</div>
+                    <h2>Hybrid Inheritance</h2>
+
+                    <p class="lead">
+                        Hybrid inheritance combines more than one inheritance
+                        structure. In Java, it is typically modeled using
+                        classes + interfaces.
+                    </p>
+
+                    <div class="diagram">
+                        <div class="node">Vehicle</div>
+                        <div class="arrow">↓</div>
+                        <div class="node">Car</div>
+                        <div class="arrow">↘</div>
+                        <div class="node">ElectricCar</div>
+                        <div class="node">Rechargeable</div>
+                    </div>
+
+                    <pre><code><span class="keyword">interface</span> <span class="type">Rechargeable</span> {
+    <span class="keyword">void</span> <span class="method">charge</span>();
+}
+
+<span class="keyword">class</span> <span class="type">Car</span>
+        <span class="keyword">extends</span> <span class="type">Vehicle</span> {
+}
+
+<span class="keyword">class</span> <span class="type">ElectricCar</span>
+        <span class="keyword">extends</span> <span class="type">Car</span>
+        <span class="keyword">implements</span> <span class="type">Rechargeable</span> {
+
+    <span class="keyword">public void</span> <span class="method">charge</span>() {
+        System.out.println(<span class="string">"Charging"</span>);
+    }
+}</code></pre>
+                </div>
+            </section>
+
+            <!-- 16 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">15 / 40</div>
+                    <h2>The <code>super</code> Keyword</h2>
+
+                    <div class="grid grid-3">
+                        <div class="card">
+                            <h3>1. Parent field</h3>
+                            <p>
+                                Access a hidden superclass field.
+                            </p>
+                        </div>
+
+                        <div class="card">
+                            <h3>2. Parent method</h3>
+                            <p>
+                                Call an overridden superclass method.
+                            </p>
+                        </div>
+
+                        <div class="card">
+                            <h3>3. Parent constructor</h3>
+                            <p>
+                                Invoke the superclass constructor.
+                            </p>
+                        </div>
+                    </div>
+
+                    <pre><code><span class="keyword">class</span> <span class="type">Parent</span> {
+    <span class="type">int</span> x = <span class="number">10</span>;
+
+    <span class="keyword">void</span> <span class="method">show</span>() {
+        System.out.println(<span class="string">"Parent show"</span>);
+    }
+}
+
+<span class="keyword">class</span> <span class="type">Child</span> <span class="keyword">extends</span> <span class="type">Parent</span> {
+    <span class="type">int</span> x = <span class="number">20</span>;
+
+    <span class="keyword">void</span> <span class="method">show</span>() {
+        System.out.println(<span class="keyword">super</span>.x);
+        <span class="keyword">super</span>.show();
+    }
+}</code></pre>
+                </div>
+            </section>
+
+            <!-- 17 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">16 / 40</div>
+                    <h2><code>super()</code> and Constructors</h2>
+
+                    <pre><code><span class="keyword">class</span> <span class="type">Person</span> {
+    <span class="type">String</span> name;
+
+    <span class="type">Person</span>(<span class="type">String</span> name) {
+        <span class="keyword">this</span>.name = name;
+    }
+}
+
+<span class="keyword">class</span> <span class="type">Student</span>
+        <span class="keyword">extends</span> <span class="type">Person</span> {
+
+    <span class="type">int</span> rollNo;
+
+    <span class="type">Student</span>(<span class="type">String</span> name, <span class="type">int</span> rollNo) {
+        <span class="keyword">super</span>(name);
+        <span class="keyword">this</span>.rollNo = rollNo;
+    }
+}</code></pre>
+
+                    <div class="callout">
+                        <code>super(...)</code> must be the first statement in a
+                        constructor when it is explicitly used.
+                    </div>
+
+                    <div class="interactive">
+                        <div class="question">
+                            Which constructor runs first when a Student object
+                            is created?
+                        </div>
+
+                        <div class="choices">
+                            <button class="choice" data-correct="true">Person constructor</button>
+                            <button class="choice" data-correct="false">Student constructor</button>
+                            <button class="choice" data-correct="false">Both at the same time</button>
+                        </div>
+
+                        <div class="answer">
+                            The superclass constructor executes before the subclass
+                            constructor body.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 18 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">17 / 40</div>
+                    <h2>Method Overriding</h2>
+
+                    <p class="lead">
+                        A subclass provides a specialized implementation of an
+                        inherited instance method with the same signature.
+                    </p>
+
+                    <pre><code><span class="keyword">class</span> <span class="type">Animal</span> {
+    <span class="keyword">void</span> <span class="method">sound</span>() {
+        System.out.println(<span class="string">"Animal sound"</span>);
+    }
+}
+
+<span class="keyword">class</span> <span class="type">Dog</span>
+        <span class="keyword">extends</span> <span class="type">Animal</span> {
+
+    <span class="annotation">@Override</span>
+    <span class="keyword">void</span> <span class="method">sound</span>() {
+        System.out.println(<span class="string">"Bark"</span>);
+    }
+}</code></pre>
+
+                    <div class="grid grid-2" style="margin-top:18px">
+                        <div class="card">
+                            <h3>Signature</h3>
+                            <p>
+                                Same method name and parameter list.
+                            </p>
+                        </div>
+
+                        <div class="card">
+                            <h3>@Override</h3>
+                            <p>
+                                Lets the compiler verify that the method really
+                                overrides an inherited method.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 19 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">18 / 40</div>
+                    <h2>Method Overloading</h2>
+
+                    <p class="lead">
+                        Same method name, different parameter list.
+                    </p>
+
+                    <pre><code><span class="keyword">class</span> <span class="type">Calculator</span> {
+
+    <span class="keyword">int</span> <span class="method">add</span>(<span class="keyword">int</span> a, <span class="keyword">int</span> b) {
+        <span class="keyword">return</span> a + b;
+    }
+
+    <span class="keyword">int</span> <span class="method">add</span>(<span class="keyword">int</span> a, <span class="keyword">int</span> b, <span class="keyword">int</span> c) {
+        <span class="keyword">return</span> a + b + c;
+    }
+
+    <span class="type">double</span> <span class="method">add</span>(<span class="type">double</span> a, <span class="type">double</span> b) {
+        <span class="keyword">return</span> a + b;
+    }
+}</code></pre>
+
+                    <div class="callout">
+                        Overloading is resolved using the method signature and
+                        compile-time type information.
+                    </div>
+
+                    <div class="interactive">
+                        <div class="question">
+                            Is changing only the return type enough to overload a method?
+                        </div>
+
+                        <div class="choices">
+                            <button class="choice" data-correct="false">Yes</button>
+                            <button class="choice" data-correct="true">No</button>
+                        </div>
+
+                        <div class="answer">
+                            No. Return type alone does not distinguish overloaded methods.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 20 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">19 / 40</div>
+                    <h2>Overloading vs Overriding</h2>
+
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Feature</th>
+                                <th>Overloading</th>
+                                <th>Overriding</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Relationship</td>
+                                <td>Usually same class</td>
+                                <td>Superclass + subclass</td>
+                            </tr>
+                            <tr>
+                                <td>Parameters</td>
+                                <td>Must differ</td>
+                                <td>Same signature</td>
+                            </tr>
+                            <tr>
+                                <td>Binding</td>
+                                <td>Compile time</td>
+                                <td>Runtime for overridden instance methods</td>
+                            </tr>
+                            <tr>
+                                <td>Main purpose</td>
+                                <td>Convenient variants</td>
+                                <td>Specialized behavior</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="interactive">
+                        <div class="question">
+                            <code>Animal a = new Dog(); a.sound();</code><br>
+                            This primarily demonstrates:
+                        </div>
+
+                        <div class="choices">
+                            <button class="choice" data-correct="false">Overloading</button>
+                            <button class="choice" data-correct="true">Overriding + dynamic dispatch</button>
+                            <button class="choice" data-correct="false">Constructor chaining only</button>
+                        </div>
+
+                        <div class="answer">
+                            Correct. The Dog implementation can be selected at runtime.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 21 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">20 / 40</div>
+                    <h2>Dynamic Method Dispatch</h2>
+
+                    <p class="lead">
+                        Java selects an overridden instance method according to
+                        the actual object at runtime.
+                    </p>
+
+                    <pre><code><span class="keyword">class</span> <span class="type">Animal</span> {
+    <span class="keyword">void</span> <span class="method">sound</span>() {
+        System.out.println(<span class="string">"Animal"</span>);
+    }
+}
+
+<span class="keyword">class</span> <span class="type">Dog</span> <span class="keyword">extends</span> <span class="type">Animal</span> {
+    <span class="keyword">void</span> <span class="method">sound</span>() {
+        System.out.println(<span class="string">"Dog"</span>);
+    }
+}
+
+<span class="type">Animal</span> a = <span class="keyword">new</span> <span class="type">Dog</span>();
+a.sound();</code></pre>
+
+                    <div class="diagram">
+                        <div class="node">Reference Type<br>Animal</div>
+                        <div class="arrow">→</div>
+                        <div class="node">Actual Object<br>Dog</div>
+                        <div class="arrow">→</div>
+                        <div class="node">Runtime Method<br>Dog.sound()</div>
+                    </div>
+
+                    <div class="terminal">
+                        Dog
+                    </div>
+                </div>
+            </section>
+
+            <!-- 22 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">21 / 40</div>
+                    <h2>Upcasting</h2>
+
+                    <p class="lead">
+                        Treat a subclass object as a superclass reference.
+                    </p>
+
+                    <pre><code><span class="type">Dog</span> dog = <span class="keyword">new</span> <span class="type">Dog</span>();
+
+<span class="type">Animal</span> animal = dog;</code></pre>
+
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <h3>Safe</h3>
+                            <p>
+                                Every Dog is an Animal, so the conversion is valid.
+                            </p>
+                        </div>
+
+                        <div class="card">
+                            <h3>Polymorphic</h3>
+                            <p>
+                                The Animal reference can still invoke overridden
+                                Dog instance methods.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="callout">
+                        Upcasting is usually implicit.
+                    </div>
+                </div>
+            </section>
+
+            <!-- 23 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">22 / 40</div>
+                    <h2>Downcasting</h2>
+
+                    <p class="lead">
+                        Convert a superclass reference back to a subclass
+                        reference when the actual object really is that subtype.
+                    </p>
+
+                    <pre><code><span class="type">Animal</span> a = <span class="keyword">new</span> <span class="type">Dog</span>();
+
+<span class="type">Dog</span> d = (<span class="type">Dog</span>) a;
+
+d.fetch();</code></pre>
+
+                    <div class="callout warning">
+                        Downcasting is explicit. The cast does not change the
+                        object. It only changes how the reference views it.
+                    </div>
+
+                    <div class="callout danger">
+                        If the actual object is not a Dog, the cast can throw
+                        <code>ClassCastException</code>.
+                    </div>
+                </div>
+            </section>
+
+            <!-- 24 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">23 / 40</div>
+                    <h2><code>instanceof</code></h2>
+
+                    <p class="lead">
+                        Use <code>instanceof</code> to test whether an object
+                        is compatible with a specific reference type.
+                    </p>
+
+                    <pre><code><span class="type">Animal</span> a = <span class="keyword">new</span> <span class="type">Dog</span>();
+
+<span class="keyword">if</span> (a <span class="keyword">instanceof</span> <span class="type">Dog</span>) {
+    <span class="type">Dog</span> d = (<span class="type">Dog</span>) a;
+    d.fetch();
+}</code></pre>
+
+                    <div class="interactive">
+                        <div class="question">
+                            For <code>Animal a = new Dog();</code>,
+                            what is the result of <code>a instanceof Dog</code>?
+                        </div>
+
+                        <div class="choices">
+                            <button class="choice" data-correct="true">true</button>
+                            <button class="choice" data-correct="false">false</button>
+                        </div>
+
+                        <div class="answer">
+                            <code>true</code>, because the actual object is a Dog.
+                        </div>
+                    </div>
+
+                    <div class="callout">
+                        Modern Java can also use pattern matching for
+                        <code>instanceof</code>, but the classic cast form is
+                        essential for understanding the underlying concept.
+                    </div>
+                </div>
+            </section>
+
+            <!-- 25 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">24 / 40</div>
+                    <h2>Employee Hierarchy</h2>
+
+                    <div class="diagram">
+                        <div class="node">Employee</div>
+                        <div class="arrow">↓</div>
+                        <div class="node">Developer</div>
+                        <div class="node">Manager</div>
+                    </div>
+
+                    <pre><code><span class="keyword">class</span> <span class="type">Employee</span> {
+    <span class="type">String</span> name;
+
+    <span class="type">Employee</span>(<span class="type">String</span> name) {
+        <span class="keyword">this</span>.name = name;
+    }
+
+    <span class="keyword">void</span> <span class="method">work</span>() {
+        System.out.println(name + <span class="string">" works"</span>);
+    }
+}
+
+<span class="keyword">class</span> <span class="type">Developer</span>
+        <span class="keyword">extends</span> <span class="type">Employee</span> {
+
+    <span class="type">Developer</span>(<span class="type">String</span> name) {
+        <span class="keyword">super</span>(name);
+    }
+
+    <span class="keyword">void</span> <span class="method">work</span>() {
+        System.out.println(name + <span class="string">" writes code"</span>);
+    }
+}
+
+<span class="keyword">class</span> <span class="type">Manager</span>
+        <span class="keyword">extends</span> <span class="type">Employee</span> {
+
+    <span class="type">Manager</span>(<span class="type">String</span> name) {
+        <span class="keyword">super</span>(name);
+    }
+
+    <span class="keyword">void</span> <span class="method">work</span>() {
+        System.out.println(name + <span class="string">" manages teams"</span>);
+    }
+}</code></pre>
+                </div>
+            </section>
+
+            <!-- 26 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">25 / 40</div>
+                    <h2>Employee Polymorphism Practical</h2>
+
+                    <pre><code><span class="type">Employee</span>[] staff = {
+    <span class="keyword">new</span> <span class="type">Developer</span>(<span class="string">"Aman"</span>),
+    <span class="keyword">new</span> <span class="type">Manager</span>(<span class="string">"Riya"</span>)
+};
+
+<span class="keyword">for</span> (<span class="type">Employee</span> e : staff) {
+    e.work();
+}</code></pre>
+
+                    <div class="terminal">
+                        Aman writes code<br>
+                        Riya manages teams
+                    </div>
+
+                    <div class="callout">
+                        The array stores a common parent type while runtime objects
+                        are different subclasses.
+                    </div>
+
+                    <div class="interactive">
+                        <div class="question">
+                            What stays common here?
+                        </div>
+
+                        <div class="choices">
+                            <button class="choice" data-correct="true">Employee reference type</button>
+                            <button class="choice" data-correct="false">Actual object class</button>
+                            <button class="choice" data-correct="false">Method implementation</button>
+                        </div>
+
+                        <div class="answer">
+                            The reference type is Employee, while the actual objects
+                            are Developer and Manager.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 27 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">26 / 40</div>
+                    <h2>Shape Hierarchy</h2>
+
+                    <pre><code><span class="keyword">abstract class</span> <span class="type">Shape</span> {
+    <span class="keyword">abstract double</span> <span class="method">area</span>();
+}
+
+<span class="keyword">class</span> <span class="type">Circle</span>
+        <span class="keyword">extends</span> <span class="type">Shape</span> {
+
+    <span class="type">double</span> radius;
+
+    <span class="type">Circle</span>(<span class="type">double</span> radius) {
+        <span class="keyword">this</span>.radius = radius;
+    }
+
+    <span class="keyword">double</span> <span class="method">area</span>() {
+        <span class="keyword">return</span> Math.PI * radius * radius;
+    }
+}
+
+<span class="keyword">class</span> <span class="type">Rectangle</span>
+        <span class="keyword">extends</span> <span class="type">Shape</span> {
+
+    <span class="type">double</span> width;
+    <span class="type">double</span> height;
+
+    <span class="type">Rectangle</span>(<span class="type">double</span> width, <span class="type">double</span> height) {
+        <span class="keyword">this</span>.width = width;
+        <span class="keyword">this</span>.height = height;
+    }
+
+    <span class="keyword">double</span> <span class="method">area</span>() {
+        <span class="keyword">return</span> width * height;
+    }
+}</code></pre>
+                </div>
+            </section>
+
+            <!-- 28 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">27 / 40</div>
+                    <h2>Shape Polymorphism</h2>
+
+                    <pre><code><span class="type">Shape</span>[] shapes = {
+    <span class="keyword">new</span> <span class="type">Circle</span>(<span class="number">5</span>),
+    <span class="keyword">new</span> <span class="type">Rectangle</span>(<span class="number">4</span>, <span class="number">6</span>)
+};
+
+<span class="keyword">for</span> (<span class="type">Shape</span> s : shapes) {
+    System.out.println(s.area());
+}</code></pre>
+
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <h3>Compile time</h3>
+                            <p>
+                                The compiler sees <code>Shape</code> as the
+                                reference type.
+                            </p>
+                        </div>
+
+                        <div class="card">
+                            <h3>Runtime</h3>
+                            <p>
+                                The overridden <code>area()</code> belonging to
+                                Circle or Rectangle executes.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="callout">
+                        This is polymorphism doing useful work: the loop does
+                        not need separate logic for every concrete shape.
+                    </div>
+                </div>
+            </section>
+
+            <!-- 29 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">28 / 40</div>
+                    <h2>Interface Polymorphism</h2>
+
+                    <pre><code><span class="keyword">interface</span> <span class="type">Payment</span> {
+    <span class="keyword">void</span> <span class="method">pay</span>(<span class="type">double</span> amount);
+}
+
+<span class="keyword">class</span> <span class="type">UPIPayment</span>
+        <span class="keyword">implements</span> <span class="type">Payment</span> {
+
+    <span class="keyword">public void</span> <span class="method">pay</span>(<span class="type">double</span> amount) {
+        System.out.println(<span class="string">"UPI: "</span> + amount);
+    }
+}
+
+<span class="keyword">class</span> <span class="type">CardPayment</span>
+        <span class="keyword">implements</span> <span class="type">Payment</span> {
+
+    <span class="keyword">public void</span> <span class="method">pay</span>(<span class="type">double</span> amount) {
+        System.out.println(<span class="string">"Card: "</span> + amount);
+    }
+}</code></pre>
+
+                    <pre><code><span class="type">Payment</span> p;
+
+p = <span class="keyword">new</span> <span class="type">UPIPayment</span>();
+p.pay(<span class="number">500</span>);
+
+p = <span class="keyword">new</span> <span class="type">CardPayment</span>();
+p.pay(<span class="number">500</span>);</code></pre>
+                </div>
+            </section>
+
+            <!-- 30 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">29 / 40</div>
+                    <h2>Abstract Classes + Inheritance</h2>
+
+                    <p class="lead">
+                        Abstract classes are useful when related subclasses share
+                        state or common implemented behavior but must provide
+                        their own specialized implementation.
+                    </p>
+
+                    <pre><code><span class="keyword">abstract class</span> <span class="type">Employee</span> {
+
+    <span class="type">String</span> name;
+
+    <span class="keyword">abstract double</span> <span class="method">calculateSalary</span>();
+
+    <span class="keyword">void</span> <span class="method">login</span>() {
+        System.out.println(<span class="string">"Employee login"</span>);
+    }
+}
+
+<span class="keyword">class</span> <span class="type">Developer</span>
+        <span class="keyword">extends</span> <span class="type">Employee</span> {
+
+    <span class="keyword">double</span> <span class="method">calculateSalary</span>() {
+        <span class="keyword">return</span> <span class="number">60000</span>;
+    }
+}</code></pre>
+
+                    <div class="callout">
+                        An abstract class cannot be instantiated directly, but it
+                        can be used as a polymorphic reference type.
+                    </div>
+                </div>
+            </section>
+
+            <!-- 31 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">30 / 40</div>
+                    <h2>Constructor + Method Behavior</h2>
+
+                    <pre><code><span class="keyword">class</span> <span class="type">Parent</span> {
+
+    <span class="type">Parent</span>() {
+        System.out.println(<span class="string">"Parent constructor"</span>);
+    }
+
+    <span class="keyword">void</span> <span class="method">show</span>() {
+        System.out.println(<span class="string">"Parent show"</span>);
+    }
+}
+
+<span class="keyword">class</span> <span class="type">Child</span> <span class="keyword">extends</span> <span class="type">Parent</span> {
+
+    <span class="type">Child</span>() {
+        System.out.println(<span class="string">"Child constructor"</span>);
+    }
+
+    <span class="keyword">void</span> <span class="method">show</span>() {
+        System.out.println(<span class="string">"Child show"</span>);
+    }
+}
+
+<span class="type">Parent</span> p = <span class="keyword">new</span> <span class="type">Child</span>();
+p.show();</code></pre>
+
+                    <div class="terminal">
+                        Parent constructor<br>
+                        Child constructor<br>
+                        Child show
+                    </div>
+
+                    <div class="callout">
+                        Constructors follow superclass-to-subclass initialization.
+                        Overridden methods use dynamic dispatch.
+                    </div>
+                </div>
+            </section>
+
+            <!-- 32 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">31 / 40</div>
+                    <h2>Common Mistakes</h2>
+
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <h3>1. Confusing overloading with overriding</h3>
+                            <p>
+                                Different parameters = overloading.
+                                Same inherited signature = overriding.
+                            </p>
+                        </div>
+
+                        <div class="card">
+                            <h3>2. Assuming reference type controls runtime method</h3>
+                            <p>
+                                For overridden instance methods, the actual object
+                                matters.
+                            </p>
+                        </div>
+
+                        <div class="card">
+                            <h3>3. Unsafe downcasting</h3>
+                            <p>
+                                A cast cannot turn one object into another type.
+                            </p>
+                        </div>
+
+                        <div class="card">
+                            <h3>4. Misusing inheritance</h3>
+                            <p>
+                                Use composition where the relationship is HAS-A.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="callout danger">
+                        The compiler can prevent many mistakes. It cannot rescue
+                        poor object-modeling decisions from bad design.
+                    </div>
+                </div>
+            </section>
+
+            <!-- 33 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">32 / 40</div>
+                    <h2>Practical 1 — Employee Hierarchy</h2>
+
+                    <div class="card">
+                        <h3>Task</h3>
+                        <ol>
+                            <li>Create a superclass <code>Employee</code>.</li>
+                            <li>Add <code>name</code>, <code>id</code> and <code>displayInfo()</code>.</li>
+                            <li>Create <code>Developer</code> and <code>Manager</code>.</li>
+                            <li>Override <code>displayInfo()</code> in both classes.</li>
+                            <li>Use <code>Employee</code> references.</li>
+                            <li>Store objects inside an <code>Employee[]</code>.</li>
+                            <li>Loop through the array and call <code>displayInfo()</code>.</li>
+                        </ol>
+                    </div>
+
+                    <div class="callout">
+                        <strong>Target:</strong> Demonstrate inheritance,
+                        overriding and dynamic method dispatch in one program.
+                    </div>
+
+                    <div class="interactive">
+                        <div class="question">
+                            Extension: Add <code>calculateSalary()</code> to the
+                            hierarchy and make each employee type calculate it differently.
+                        </div>
+
+                        <button class="reveal" onclick="toggleAnswer(this)">
+                            Suggested direction
+                        </button>
+
+                        <div class="answer">
+                            Define the method in Employee, then override it in
+                            Developer and Manager. Use an Employee reference to
+                            invoke it polymorphically.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 34 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">33 / 40</div>
+                    <h2>Practical 2 — Shape Hierarchy</h2>
+
+                    <div class="card">
+                        <h3>Task</h3>
+                        <ol>
+                            <li>Create an abstract class <code>Shape</code>.</li>
+                            <li>Declare abstract method <code>area()</code>.</li>
+                            <li>Create <code>Circle</code>, <code>Rectangle</code> and <code>Triangle</code>.</li>
+                            <li>Override <code>area()</code>.</li>
+                            <li>Create a <code>Shape[]</code>.</li>
+                            <li>Store different shapes inside it.</li>
+                            <li>Use one loop to calculate every area.</li>
+                        </ol>
+                    </div>
+
+                    <pre><code><span class="keyword">for</span> (<span class="type">Shape</span> shape : shapes) {
+    System.out.println(shape.area());
+}</code></pre>
+
+                    <div class="callout">
+                        The loop should not contain:
+                        <code>if Circle</code>,
+                        <code>if Rectangle</code>,
+                        <code>if Triangle</code>
+                        just to calculate the area.
+                    </div>
+                </div>
+            </section>
+
+            <!-- 35 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">34 / 40</div>
+                    <h2>Polymorphism Coding Challenge</h2>
+
+                    <p class="lead">
+                        Design a notification system where each notification type
+                        behaves differently.
+                    </p>
+
+                    <pre><code><span class="keyword">abstract class</span> <span class="type">Notification</span> {
+    <span class="keyword">abstract void</span> <span class="method">send</span>();
+}
+
+<span class="keyword">class</span> <span class="type">EmailNotification</span>
+        <span class="keyword">extends</span> <span class="type">Notification</span> {
+    <span class="keyword">void</span> <span class="method">send</span>() {
+        System.out.println(<span class="string">"Sending Email"</span>);
+    }
+}
+
+<span class="keyword">class</span> <span class="type">SMSNotification</span>
+        <span class="keyword">extends</span> <span class="type">Notification</span> {
+    <span class="keyword">void</span> <span class="method">send</span>() {
+        System.out.println(<span class="string">"Sending SMS"</span>);
+    }
+}
+
+<span class="keyword">class</span> <span class="type">PushNotification</span>
+        <span class="keyword">extends</span> <span class="type">Notification</span> {
+    <span class="keyword">void</span> <span class="method">send</span>() {
+        System.out.println(<span class="string">"Sending Push Notification"</span>);
+    }
+}</code></pre>
+
+                    <div class="interactive">
+                        <div class="question">
+                            Challenge: create one array of Notification references
+                            and invoke send() without checking the subclass name.
+                        </div>
+
+                        <button class="reveal" onclick="toggleAnswer(this)">
+                            Reveal approach
+                        </button>
+
+                        <div class="answer">
+                            Use <code>Notification[] notifications</code> and iterate:
+                            <code>for (Notification n : notifications) n.send();</code>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 36 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">35 / 40</div>
+                    <h2>Interactive Quiz — Round 1</h2>
+
+                    <div class="interactive">
+                        <div class="question">
+                            1. Which keyword creates class inheritance?
+                        </div>
+
+                        <div class="choices">
+                            <button class="choice" data-correct="true">extends</button>
+                            <button class="choice" data-correct="false">inherits</button>
+                            <button class="choice" data-correct="false">superclass</button>
+                        </div>
+
+                        <div class="answer">Correct: <code>extends</code>.</div>
+                    </div>
+
+                    <div class="interactive">
+                        <div class="question">
+                            2. Which keyword is used to invoke a superclass constructor?
+                        </div>
+
+                        <div class="choices">
+                            <button class="choice" data-correct="false">this</button>
+                            <button class="choice" data-correct="true">super</button>
+                            <button class="choice" data-correct="false">parent</button>
+                        </div>
+
+                        <div class="answer">
+                            Correct: <code>super</code>.
+                        </div>
+                    </div>
+
+                    <div class="interactive">
+                        <div class="question">
+                            3. Can constructors be overridden?
+                        </div>
+
+                        <div class="choices">
+                            <button class="choice" data-correct="false">Yes</button>
+                            <button class="choice" data-correct="true">No</button>
+                        </div>
+
+                        <div class="answer">
+                            Constructors are not inherited, so they cannot be overridden.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 37 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">36 / 40</div>
+                    <h2>Interactive Quiz — Round 2</h2>
+
+                    <div class="interactive">
+                        <div class="question">
+                            Given:
+                            <code>Animal a = new Dog();</code><br>
+                            What is <code>a instanceof Dog</code>?
+                        </div>
+
+                        <div class="choices">
+                            <button class="choice" data-correct="true">true</button>
+                            <button class="choice" data-correct="false">false</button>
+                        </div>
+
+                        <div class="answer">
+                            <code>true</code>.
+                        </div>
+                    </div>
+
+                    <div class="interactive">
+                        <div class="question">
+                            Which conversion is generally implicit?
+                        </div>
+
+                        <div class="choices">
+                            <button class="choice" data-correct="true">Upcasting</button>
+                            <button class="choice" data-correct="false">Downcasting</button>
+                        </div>
+
+                        <div class="answer">
+                            Upcasting is generally implicit. Downcasting requires
+                            an explicit cast.
+                        </div>
+                    </div>
+
+                    <div class="interactive">
+                        <div class="question">
+                            Dynamic method dispatch mainly applies to:
+                        </div>
+
+                        <div class="choices">
+                            <button class="choice" data-correct="false">Local variables</button>
+                            <button class="choice" data-correct="true">Overridden instance methods</button>
+                            <button class="choice" data-correct="false">Constructors</button>
+                        </div>
+
+                        <div class="answer">
+                            Correct: overridden instance methods.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 38 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">37 / 40</div>
+                    <h2>Debugging Lab</h2>
+
+                    <pre><code><span class="keyword">class</span> <span class="type">Animal</span> { }
+
+<span class="keyword">class</span> <span class="type">Cat</span> <span class="keyword">extends</span> <span class="type">Animal</span> { }
+
+<span class="keyword">class</span> <span class="type">Dog</span> <span class="keyword">extends</span> <span class="type">Animal</span> { }
+
+<span class="type">Animal</span> a = <span class="keyword">new</span> <span class="type">Cat</span>();
+
+<span class="type">Dog</span> d = (<span class="type">Dog</span>) a;</code></pre>
+
+                    <div class="interactive">
+                        <div class="question">
+                            What happens on the last line?
+                        </div>
+
+                        <div class="choices">
+                            <button class="choice" data-correct="false">Safe conversion</button>
+                            <button class="choice" data-correct="true">ClassCastException at runtime</button>
+                            <button class="choice" data-correct="false">Compilation always succeeds and prints Dog</button>
+                        </div>
+
+                        <div class="answer">
+                            The actual object is Cat, not Dog. The downcast therefore
+                            fails at runtime with ClassCastException.
+                        </div>
+                    </div>
+
+                    <div class="callout">
+                        Safer pattern:
+                        <code>if (a instanceof Dog) { ... }</code>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 39 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">38 / 40</div>
+                    <h2>Week 5 Cheat Sheet</h2>
+
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Concept</th>
+                                <th>Remember</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Inheritance</td>
+                                <td><code>extends</code> connects a subclass to one superclass.</td>
+                            </tr>
+                            <tr>
+                                <td>Multiple inheritance</td>
+                                <td>Not supported between classes; interfaces provide multiple type inheritance.</td>
+                            </tr>
+                            <tr>
+                                <td>super</td>
+                                <td>Parent field, method or constructor.</td>
+                            </tr>
+                            <tr>
+                                <td>Overloading</td>
+                                <td>Same method name, different parameter list.</td>
+                            </tr>
+                            <tr>
+                                <td>Overriding</td>
+                                <td>Subclass replaces inherited instance-method behavior.</td>
+                            </tr>
+                            <tr>
+                                <td>Dynamic dispatch</td>
+                                <td>Runtime object determines overridden method implementation.</td>
+                            </tr>
+                            <tr>
+                                <td>Upcasting</td>
+                                <td>Subclass reference → superclass reference.</td>
+                            </tr>
+                            <tr>
+                                <td>Downcasting</td>
+                                <td>Superclass reference → subclass reference; verify first.</td>
+                            </tr>
+                            <tr>
+                                <td>instanceof</td>
+                                <td>Checks runtime type compatibility.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 40 -->
+            <section class="slide">
+                <div class="slide-inner">
+                    <div class="eyebrow">40 / 40</div>
+                    <h2>Exit Ticket + Assignment</h2>
+
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <h3>Explain in one minute</h3>
+                            <ol>
+                                <li>Why does Java not support multiple class inheritance?</li>
+                                <li>What is the difference between overloading and overriding?</li>
+                                <li>Why does <code>Animal a = new Dog()</code> enable polymorphism?</li>
+                                <li>Why is unsafe downcasting dangerous?</li>
+                            </ol>
+                        </div>
+
+                        <div class="card">
+                            <h3>Assignment</h3>
+                            <ol>
+                                <li>Build an Employee hierarchy.</li>
+                                <li>Build a Shape hierarchy.</li>
+                                <li>Use at least one interface.</li>
+                                <li>Demonstrate <code>super</code>.</li>
+                                <li>Demonstrate overriding.</li>
+                                <li>Demonstrate dynamic dispatch.</li>
+                                <li>Use <code>instanceof</code> before a downcast.</li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <div class="callout">
+                        <strong>Final mental model:</strong>
+                        Inheritance defines the relationship.
+                        Overriding changes behavior.
+                        Polymorphism lets one reference represent many concrete forms.
+                    </div>
+
+                    <div style="margin-top:24px">
+                        <span class="tag">INHERIT</span>
+                        <span class="tag">OVERRIDE</span>
+                        <span class="tag">DISPATCH</span>
+                        <span class="tag">CAST</span>
+                        <span class="tag">DESIGN</span>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+
+        <div class="footer">
+            <div class="hint">
+                ← → Navigate · Space = Next · Home = First · End = Last · F = Fullscreen
+            </div>
+
+            <div class="footer-controls">
+                <button class="btn" id="prevBtn">◀ PREV</button>
+                <button class="btn" id="nextBtn">NEXT ▶</button>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+/* ============================================================
+   MATRIX RAIN
+============================================================ */
+const canvas = document.getElementById("matrix");
+const ctx = canvas.getContext("2d");
+
+let width = canvas.width = window.innerWidth;
+let height = canvas.height = window.innerHeight;
+
+const chars =
+    "01ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz{}[]<>/\\\\$#@%&*+=-";
+
+const fontSize = 14;
+let columns = Math.floor(width / fontSize);
+let drops = Array(columns).fill(1);
+
+function matrixRain() {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.075)";
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.fillStyle = "#00ff66";
+    ctx.font = fontSize + "px monospace";
+
+    for (let i = 0; i < drops.length; i++) {
+        const text = chars.charAt(Math.floor(Math.random() * chars.length));
+
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+        if (
+            drops[i] * fontSize > height &&
+            Math.random() > 0.975
+        ) {
+            drops[i] = 0;
+        }
+
+        drops[i]++;
+    }
+}
+
+setInterval(matrixRain, 55);
+
+window.addEventListener("resize", () => {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+    columns = Math.floor(width / fontSize);
+    drops = Array(columns).fill(1);
+});
+
+
+/* ============================================================
+   SLIDE NAVIGATION
+============================================================ */
+const slides = [...document.querySelectorAll(".slide")];
+const counter = document.getElementById("counter");
+const progress = document.getElementById("progress");
+
+let current = 0;
+
+function showSlide(index) {
+    current = Math.max(0, Math.min(index, slides.length - 1));
+
+    slides.forEach((slide, i) => {
+        slide.classList.toggle("active", i === current);
+    });
+
+    counter.textContent =
+        String(current + 1).padStart(2, "0") +
+        " / " +
+        String(slides.length).padStart(2, "0");
+
+    progress.style.width =
+        (((current + 1) / slides.length) * 100) + "%";
+
+    document.getElementById("prevBtn").disabled = current === 0;
+    document.getElementById("nextBtn").disabled =
+        current === slides.length - 1;
+
+    slides[current].scrollTop = 0;
+}
+
+function nextSlide() {
+    showSlide(current + 1);
+}
+
+function prevSlide() {
+    showSlide(current - 1);
+}
+
+document.getElementById("nextBtn").addEventListener("click", nextSlide);
+document.getElementById("prevBtn").addEventListener("click", prevSlide);
+
+document.addEventListener("keydown", (e) => {
+    if (
+        e.target.tagName === "INPUT" ||
+        e.target.tagName === "TEXTAREA"
+    ) {
+        return;
+    }
+
+    if (
+        e.key === "ArrowRight" ||
+        e.key === "PageDown" ||
+        e.key === " "
+    ) {
+        e.preventDefault();
+        nextSlide();
+    }
+
+    if (
+        e.key === "ArrowLeft" ||
+        e.key === "PageUp"
+    ) {
+        e.preventDefault();
+        prevSlide();
+    }
+
+    if (e.key === "Home") {
+        e.preventDefault();
+        showSlide(0);
+    }
+
+    if (e.key === "End") {
+        e.preventDefault();
+        showSlide(slides.length - 1);
+    }
+
+    if (e.key.toLowerCase() === "f") {
+        toggleFullscreen();
+    }
+});
+
+
+/* ============================================================
+   FULLSCREEN
+============================================================ */
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+        document.exitFullscreen().catch(() => {});
+    }
+}
+
+document
+    .getElementById("fullscreenBtn")
+    .addEventListener("click", toggleFullscreen);
+
+
+/* ============================================================
+   INTERACTIVE MCQs
+============================================================ */
+document.querySelectorAll(".choices").forEach(group => {
+    const buttons = group.querySelectorAll(".choice");
+    const answer = group.parentElement.querySelector(".answer");
+
+    buttons.forEach(button => {
+        button.addEventListener("click", () => {
+
+            buttons.forEach(btn => {
+                btn.classList.remove("correct", "wrong");
+            });
+
+            if (button.dataset.correct === "true") {
+                button.classList.add("correct");
+                if (answer) answer.classList.add("show");
+            } else {
+                button.classList.add("wrong");
+            }
+        });
+    });
+});
+
+
+/* ============================================================
+   REVEAL ANSWERS
+============================================================ */
+function toggleAnswer(button) {
+    const answer = button.nextElementSibling;
+
+    if (!answer) return;
+
+    answer.classList.toggle("show");
+
+    button.textContent =
+        answer.classList.contains("show")
+            ? "Hide solution"
+            : "Reveal solution";
+}
+
+
+/* ============================================================
+   COPY CODE BUTTONS
+============================================================ */
+document.querySelectorAll("pre").forEach(pre => {
+    const code = pre.querySelector("code");
+    if (!code) return;
+
+    const copyButton = document.createElement("button");
+    copyButton.className = "copy-btn";
+    copyButton.textContent = "COPY";
+
+    copyButton.addEventListener("click", async () => {
+        try {
+            await navigator.clipboard.writeText(code.innerText);
+            copyButton.textContent = "COPIED";
+
+            setTimeout(() => {
+                copyButton.textContent = "COPY";
+            }, 1200);
+        } catch {
+            copyButton.textContent = "ERROR";
+        }
+    });
+
+    pre.appendChild(copyButton);
+});
+
+
+/* ============================================================
+   TOUCH / SWIPE SUPPORT
+============================================================ */
+let touchStartX = null;
+
+document.addEventListener("touchstart", (e) => {
+    touchStartX = e.changedTouches[0].clientX;
+});
+
+document.addEventListener("touchend", (e) => {
+    if (touchStartX === null) return;
+
+    const endX = e.changedTouches[0].clientX;
+    const delta = endX - touchStartX;
+
+    if (Math.abs(delta) > 60) {
+        if (delta < 0) nextSlide();
+        else prevSlide();
+    }
+
+    touchStartX = null;
+});
+
+
+/* ============================================================
+   INITIAL STATE
+============================================================ */
+showSlide(0);
+</script>
+
+</body>
+</html>

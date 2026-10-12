@@ -1,0 +1,2550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 6 — Abstraction &amp; Generics | 5th Semester</title>
+<style>
+  :root {
+    --green: #00ff41;
+    --green-bright: #7dffa0;
+    --green-mid: #00c832;
+    --green-dim: #008f11;
+    --green-dark: #003b00;
+    --bg: #000000;
+    --panel: #060d06;
+    --panel-2: #0a140a;
+    --text: #c9f5c9;
+    --text-dim: #7fae7f;
+    --border: rgba(0, 255, 65, 0.25);
+    --border-soft: rgba(0, 255, 65, 0.12);
+    --amber: #ffb000;
+    --red: #ff3b3b;
+    --cyan: #66d9ff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Consolas", "Courier New", "SF Mono", monospace;
+    overflow: hidden;
+  }
+
+  #matrix {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.18;
+    pointer-events: none;
+  }
+
+  .deck {
+    position: relative;
+    z-index: 1;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+    padding: 3.2vh 4vw 7vh 4vw;
+    overflow-y: auto;
+    overflow-x: hidden;
+    animation: fadeUp 0.35s ease-out;
+  }
+
+  .slide.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .slide::-webkit-scrollbar { width: 8px; }
+  .slide::-webkit-scrollbar-track { background: transparent; }
+  .slide::-webkit-scrollbar-thumb {
+    background: var(--green-dark);
+    border-radius: 4px;
+  }
+
+  .slide-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  .slide-head {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1.4vh;
+    margin-bottom: 2.4vh;
+  }
+
+  .slide-tag {
+    display: inline-block;
+    font-size: clamp(10px, 0.85vw, 13px);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--green-mid);
+    border: 1px solid var(--border);
+    padding: 3px 10px;
+    border-radius: 3px;
+    margin-bottom: 1vh;
+    background: rgba(0, 255, 65, 0.05);
+  }
+
+  h1 {
+    font-size: clamp(26px, 3.6vw, 52px);
+    color: var(--green);
+    text-shadow: 0 0 14px rgba(0, 255, 65, 0.55);
+    letter-spacing: 0.02em;
+    line-height: 1.15;
+  }
+
+  h2 {
+    font-size: clamp(20px, 2.4vw, 34px);
+    color: var(--green);
+    text-shadow: 0 0 10px rgba(0, 255, 65, 0.4);
+  }
+
+  h3 {
+    font-size: clamp(15px, 1.35vw, 21px);
+    color: var(--green-bright);
+    margin-bottom: 1vh;
+  }
+
+  h4 {
+    font-size: clamp(13px, 1.1vw, 17px);
+    color: var(--green-mid);
+    margin-bottom: 0.8vh;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  p, li {
+    font-size: clamp(13px, 1.05vw, 17px);
+    line-height: 1.65;
+    color: var(--text);
+  }
+
+  ul, ol { padding-left: 1.4em; }
+  li { margin-bottom: 0.55vh; }
+  li::marker { color: var(--green-mid); }
+
+  strong { color: var(--green-bright); font-weight: 600; }
+  em { color: var(--amber); font-style: normal; }
+
+  .cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.2vw;
+  }
+  .cols-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.6vw;
+  }
+  .stack > * + * { margin-top: 1.6vh; }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--green-dim);
+    border-radius: 4px;
+    padding: 1.6vh 1.4vw;
+  }
+  .card.accent { border-left-color: var(--green); box-shadow: 0 0 18px rgba(0,255,65,0.08); }
+  .card.warn { border-left-color: var(--amber); }
+  .card.danger { border-left-color: var(--red); }
+
+  pre {
+    background: #030803;
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--green-mid);
+    border-radius: 4px;
+    padding: 1.2vh 1vw;
+    overflow-x: auto;
+    font-size: clamp(11px, 0.9vw, 15px);
+    line-height: 1.55;
+    color: var(--green-bright);
+    white-space: pre;
+  }
+  pre .kw  { color: #66d9ff; }
+  pre .str { color: #ffd479; }
+  pre .cmt { color: #4d7a4d; font-style: italic; }
+  pre .num { color: #ff9d5c; }
+  pre .cls { color: #7dffa0; }
+  pre .ann { color: #ff9d5c; }
+
+  code {
+    font-family: inherit;
+    background: rgba(0, 255, 65, 0.08);
+    border: 1px solid var(--border-soft);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--green-bright);
+    font-size: 0.95em;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: clamp(11px, 0.92vw, 15px);
+    margin-top: 0.6vh;
+  }
+  th, td {
+    border: 1px solid var(--border-soft);
+    padding: 0.7vh 0.8vw;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: rgba(0, 255, 65, 0.10);
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.85em;
+  }
+  td { color: var(--text); }
+  tr:nth-child(even) td { background: rgba(0, 255, 65, 0.025); }
+
+  .section-slide .slide-inner {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .section-slide .num {
+    font-size: clamp(70px, 10vw, 160px);
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--green-dim);
+    line-height: 1;
+    margin-bottom: 1vh;
+  }
+  .section-slide h1 {
+    font-size: clamp(34px, 5vw, 72px);
+  }
+  .section-slide .rule {
+    width: 120px;
+    height: 3px;
+    background: var(--green);
+    margin: 2.2vh 0;
+    box-shadow: 0 0 14px var(--green);
+  }
+  .section-slide p {
+    color: var(--text-dim);
+    max-width: 760px;
+    font-size: clamp(14px, 1.15vw, 19px);
+  }
+
+  .title-slide .slide-inner {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .title-slide .kicker {
+    color: var(--green-mid);
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    font-size: clamp(11px, 0.9vw, 14px);
+    margin-bottom: 2vh;
+  }
+  .title-slide h1 {
+    font-size: clamp(34px, 5.2vw, 76px);
+    line-height: 1.05;
+    margin-bottom: 1.6vh;
+  }
+  .title-slide .sub {
+    color: var(--text-dim);
+    font-size: clamp(14px, 1.2vw, 20px);
+    max-width: 900px;
+    line-height: 1.6;
+  }
+  .title-slide .meta {
+    margin-top: 4vh;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .chip {
+    border: 1px solid var(--border);
+    background: rgba(0, 255, 65, 0.05);
+    color: var(--green-bright);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: clamp(11px, 0.9vw, 14px);
+    letter-spacing: 0.06em;
+  }
+
+  .hud {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 22px;
+    background: linear-gradient(to top, rgba(0,0,0,0.92), rgba(0,0,0,0));
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    pointer-events: none;
+  }
+  .hud .counter { color: var(--green); }
+  .hud .brand { color: var(--green-dim); text-transform: uppercase; }
+
+  .nav {
+    position: fixed;
+    right: 22px;
+    bottom: 42px;
+    z-index: 6;
+    display: flex;
+    gap: 10px;
+  }
+  .nav button {
+    width: 42px; height: 42px;
+    background: rgba(0, 20, 0, 0.7);
+    border: 1px solid var(--border);
+    color: var(--green);
+    font-family: inherit;
+    font-size: 18px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    display: grid;
+    place-items: center;
+  }
+  .nav button:hover {
+    background: rgba(0, 255, 65, 0.12);
+    box-shadow: 0 0 14px rgba(0, 255, 65, 0.35);
+  }
+  .nav button:disabled { opacity: 0.25; cursor: not-allowed; }
+
+  .progress {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: 3px;
+    background: rgba(0, 255, 65, 0.08);
+    z-index: 7;
+  }
+  .progress > i {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: var(--green);
+    box-shadow: 0 0 10px var(--green);
+    transition: width 0.25s ease;
+  }
+
+  .muted { color: var(--text-dim); }
+  .green { color: var(--green); }
+  .amber { color: var(--amber); }
+  .red { color: var(--red); }
+  .cyan { color: var(--cyan); }
+
+  .blink::after {
+    content: "_";
+    animation: blink 1s steps(2, start) infinite;
+    color: var(--green);
+  }
+  @keyframes blink { to { visibility: hidden; } }
+
+  .term {
+    background: #030803;
+    border: 1px solid var(--border-soft);
+    border-radius: 4px;
+    padding: 1.2vh 1vw;
+    font-size: clamp(11px, 0.92vw, 15px);
+    line-height: 1.55;
+  }
+  .term .prompt { color: var(--green-mid); }
+  .term .out { color: var(--text-dim); }
+
+  @media (max-width: 900px) {
+    .cols, .cols-3 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="matrix"></canvas>
+
+<div class="deck" id="deck">
+
+  <!-- ========== 1. TITLE ========== -->
+  <section class="slide title-slide active">
+    <div class="slide-inner">
+      <div class="kicker">5th Semester &nbsp;|&nbsp; Week 6 &nbsp;|&nbsp; Abstraction &amp; Generics</div>
+      <h1>Abstraction,<br>Generics &amp; Collections</h1>
+      <p class="sub">
+        Unit 1 (Abstract Data Types) &amp; Unit 4 (Generic Types &amp; Collections).
+        Lectures 26–30. From representation invariants and abstraction functions,
+        through generic classes and wildcards, to the Java Collections Framework.
+      </p>
+      <div class="meta">
+        <span class="chip">Abstraction</span>
+        <span class="chip">Abstract Classes</span>
+        <span class="chip">Interfaces</span>
+        <span class="chip">ADT Invariants</span>
+        <span class="chip">Generics</span>
+        <span class="chip">Wildcards</span>
+        <span class="chip">Collections</span>
+        <span class="chip">Object Ordering</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 2. WEEK OVERVIEW ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Overview</span>
+        <h2>What This Week Covers</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Part I — Abstraction</h3>
+            <p>Abstract classes, interfaces, and the abstract-data-type mindset: what to expose, what to hide, and why.</p>
+          </div>
+          <div class="card accent">
+            <h3>Part II — ADT Foundations (Lecture 27)</h3>
+            <p>Concrete state, representation variants, abstraction function, representation invariant. Worked <em>Text ADT</em> example.</p>
+          </div>
+          <div class="card accent">
+            <h3>Part III — Generics (Lectures 28–29)</h3>
+            <p>Simple generics, generic classes, interfaces, methods, subtyping, wildcards, bounded type parameters.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Part IV — Generic Practical (Lecture 26)</h3>
+            <p>Generic <code>Pair</code>, <code>Box</code>, <code>Stack</code>, utility methods, wildcard exercises, generic repository interface.</p>
+          </div>
+          <div class="card accent">
+            <h3>Part V — Collections Framework (Lecture 30)</h3>
+            <p>List, Set, Queue, Deque, Map — architecture, operations, iteration, ordering with <code>Comparable</code> and <code>Comparator</code>.</p>
+          </div>
+          <div class="card warn">
+            <h3>RBTL Alignment</h3>
+            <p>L2 Understand · L3 Apply · L4 Analyze</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 3. LEARNING OBJECTIVES ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Objectives</span>
+        <h2>Learning Outcomes for Week 6</h2>
+      </header>
+      <div class="cols">
+        <div class="card">
+          <h4>Technical Skills</h4>
+          <ul>
+            <li>Design abstract classes and interfaces for reusable contracts.</li>
+            <li>Write representation invariants and abstraction functions for an ADT.</li>
+            <li>Define and use generic classes, interfaces, and methods.</li>
+            <li>Apply bounded type parameters and wildcards correctly.</li>
+            <li>Implement a generic repository and generic container types.</li>
+            <li>Use the Java Collections Framework (List, Set, Queue, Deque, Map).</li>
+            <li>Order objects with <code>Comparable</code> and <code>Comparator</code>.</li>
+            <li>Iterate collections safely with iterators and enhanced for-loops.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Conceptual Skills</h4>
+          <ul>
+            <li>Explain what abstraction buys you in software design.</li>
+            <li>Reason about representation choices and their invariants.</li>
+            <li>Distinguish abstract classes from interfaces and choose well.</li>
+            <li>Explain type erasure and its practical consequences.</li>
+            <li>Understand why generics provide compile-time type safety.</li>
+            <li>Choose the right collection for a given access pattern.</li>
+            <li>Compare natural ordering with comparator-based ordering.</li>
+            <li>Relate each construct back to reusable, maintainable APIs.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 4. SECTION — ABSTRACTION ========== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">01</div>
+      <h1>Abstraction</h1>
+      <div class="rule"></div>
+      <p>Abstraction is the discipline of exposing <em>what</em> something does and hiding
+      <em>how</em> it does it. It is the conceptual foundation of ADTs, abstract classes,
+      interfaces, and generics.</p>
+    </div>
+  </section>
+
+  <!-- ========== 5. WHAT IS ABSTRACTION ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Abstraction</span>
+        <h2>What Is Abstraction?</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>Abstraction is the process of reducing complexity by exposing only the
+            essential features of an entity while hiding the implementation details.
+            It lets a client interact with an idea rather than a mechanism.</p>
+          </div>
+          <div class="card">
+            <h3>Two Levels of Abstraction</h3>
+            <ul>
+              <li><strong>Interface abstraction:</strong> the public contract — what a client can call.</li>
+              <li><strong>Data abstraction:</strong> the values an object can take and the operations defined on them.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Everyday Example</h3>
+            <p>When you drive a car, you use a steering wheel, pedals, and gear lever.
+            You do not need to know how the engine's fuel injection works. The steering
+            wheel is the <em>interface</em>; the engine is the <em>implementation</em>.</p>
+          </div>
+          <div class="card warn">
+            <h3>Why It Matters</h3>
+            <ul>
+              <li>Reduces cognitive load for clients.</li>
+              <li>Allows implementation to change without breaking callers.</li>
+              <li>Enables testing and substitution.</li>
+              <li>Supports layered system design.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 6. ABSTRACT CLASSES ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Abstraction</span>
+        <h2>Abstract Classes</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>An abstract class is a class declared with <code>abstract</code> that cannot
+            be instantiated. It may contain abstract methods (no body) and concrete
+            methods (with body).</p>
+            <pre><span class="kw">abstract class</span> Shape {
+    String name;
+
+    <span class="kw">public</span> Shape(String name) {
+        <span class="kw">this</span>.name = name;
+    }
+
+    <span class="kw">abstract double</span> area();
+
+    <span class="kw">void</span> describe() {
+        System.out.println(name + <span class="str">": area="</span> + area());
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Rules</h3>
+            <ul>
+              <li>Cannot be instantiated with <code>new</code>.</li>
+              <li>Can have constructors (called via <code>super</code>).</li>
+              <li>Can have fields, concrete methods, and abstract methods.</li>
+              <li>Subclasses must override all abstract methods or be abstract themselves.</li>
+            </ul>
+          </div>
+          <div class="card warn">
+            <h3>When to Use</h3>
+            <p>Use an abstract class when subclasses share <strong>state</strong> or when
+            you want to provide a <strong>partial implementation</strong> that subclasses
+            complete.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 7. INTERFACES ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Abstraction</span>
+        <h2>Interfaces</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>An interface is a pure contract — a set of method signatures that
+            implementing classes must fulfill. It defines <em>what</em> a type can do,
+            not <em>how</em>.</p>
+            <pre><span class="kw">interface</span> Drawable {
+    <span class="kw">void</span> draw();
+
+    <span class="cmt">// default method (Java 8+)</span>
+    <span class="kw">default void</span> highlight() {
+        System.out.println(<span class="str">"Highlighting..."</span>);
+    }
+
+    <span class="cmt">// static method</span>
+    <span class="kw">static void</span> describe() {
+        System.out.println(<span class="str">"A drawable object"</span>);
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Implementation</h3>
+            <pre><span class="kw">class</span> Circle <span class="kw">implements</span> Drawable {
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> draw() {
+        System.out.println(<span class="str">"Drawing circle"</span>);
+    }
+}</pre>
+          </div>
+          <div class="card warn">
+            <h3>When to Use</h3>
+            <p>Use an interface when unrelated classes share a <strong>capability</strong>,
+            or when you need <strong>multiple inheritance of type</strong>.</p>
+          </div>
+          <div class="card">
+            <h3>Interface Members</h3>
+            <ul>
+              <li>Abstract methods (implicitly public).</li>
+              <li><code>default</code> methods (Java 8+).</li>
+              <li><code>static</code> methods (Java 8+).</li>
+              <li><code>private</code> helper methods (Java 9+).</li>
+              <li>Constants — <code>public static final</code>.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 8. ABSTRACT CLASS VS INTERFACE ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Abstraction</span>
+        <h2>Abstract Class vs Interface — Decision Table</h2>
+      </header>
+      <table>
+        <thead>
+          <tr><th>Aspect</th><th>Abstract Class</th><th>Interface</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Instantiation</td><td>Not allowed</td><td>Not allowed</td></tr>
+          <tr><td>State (fields)</td><td>Instance fields allowed</td><td>Only constants</td></tr>
+          <tr><td>Constructors</td><td>Yes</td><td>No</td></tr>
+          <tr><td>Methods</td><td>Abstract + concrete</td><td>Abstract + default + static + private</td></tr>
+          <tr><td>Multiple inheritance</td><td>No (single)</td><td>Yes (multiple)</td></tr>
+          <tr><td>Access modifiers</td><td>Any</td><td>Public (implicitly)</td></tr>
+          <tr><td>Relationship</td><td>"is-a" with shared state</td><td>"can-do" capability</td></tr>
+          <tr><td>Typical use</td><td>Base of a hierarchy with shared code</td><td>Pluggable contract</td></tr>
+        </tbody>
+      </table>
+      <div class="cols" style="margin-top:1.8vh">
+        <div class="card accent">
+          <h3>Choose Abstract Class When</h3>
+          <ul>
+            <li>Subclasses share fields or constructors.</li>
+            <li>You want to provide partial behaviour.</li>
+            <li>You are modelling an "is-a" hierarchy with common state.</li>
+          </ul>
+        </div>
+        <div class="card accent">
+          <h3>Choose Interface When</h3>
+          <ul>
+            <li>Unrelated classes share a capability.</li>
+            <li>You need multiple inheritance of type.</li>
+            <li>You want to decouple the contract from any implementation.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 9. SECTION — ADT FOUNDATIONS ========== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">02</div>
+      <h1>ADT Foundations</h1>
+      <div class="rule"></div>
+      <p>Lecture 27. An abstract data type is defined by its values and operations —
+      not by how those values are stored. This section formalizes that idea with
+      concrete state, invariants, and abstraction functions.</p>
+    </div>
+  </section>
+
+  <!-- ========== 10. WHAT IS AN ADT ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">ADT Foundations</span>
+        <h2>What Is an Abstract Data Type?</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>An ADT is a mathematical model of a data type defined by:</p>
+            <ul>
+              <li>The <strong>values</strong> it can take.</li>
+              <li>The <strong>operations</strong> defined on those values.</li>
+            </ul>
+            <p>It says nothing about representation. A <code>Stack</code> is a LIFO
+            collection, regardless of whether it is stored as an array or a linked list.</p>
+          </div>
+          <div class="card">
+            <h3>Classic ADT Examples</h3>
+            <ul>
+              <li>Stack, Queue, Deque</li>
+              <li>List, Set, Map</li>
+              <li>String / Text</li>
+              <li>Polynomial, Matrix</li>
+            </ul>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card warn">
+            <h3>ADT vs Data Structure</h3>
+            <table>
+              <thead><tr><th>ADT</th><th>Data Structure</th></tr></thead>
+              <tbody>
+                <tr><td>Conceptual model</td><td>Concrete implementation</td></tr>
+                <tr><td>What operations exist</td><td>How they are performed</td></tr>
+                <tr><td>Specification</td><td>Representation</td></tr>
+                <tr><td>Client-facing</td><td>Internal</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card accent">
+            <h3>Why Separate Them?</h3>
+            <p>Because representation choices can change (array → tree) without
+            disturbing the client's code, as long as the ADT's contract stays the same.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 11. CONCRETE STATE ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">ADT Foundations</span>
+        <h2>Concrete State and Representation</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Concrete State</h3>
+            <p>The actual fields that store the data inside an object. The concrete
+            state is the <em>representation</em> chosen by the implementer.</p>
+            <pre><span class="kw">public class</span> IntStack {
+    <span class="kw">private int</span>[] data;   <span class="cmt">// concrete state</span>
+    <span class="kw">private int</span> top;     <span class="cmt">// concrete state</span>
+}</pre>
+          </div>
+          <div class="card">
+            <h3>Representation Variants</h3>
+            <p>An ADT may have multiple valid representations. The choice affects
+            performance, memory, and complexity — not the client's view.</p>
+            <ul>
+              <li>Stack: fixed array, dynamic array, linked list.</li>
+              <li>Set: hash table, balanced tree, sorted array.</li>
+              <li>Text: <code>char[]</code>, <code>StringBuilder</code>, rope.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card warn">
+            <h3>Representation Choice Matters</h3>
+            <table>
+              <thead><tr><th>Representation</th><th>Strength</th><th>Weakness</th></tr></thead>
+              <tbody>
+                <tr><td>Array</td><td>Fast indexing</td><td>Fixed size, slow insert</td></tr>
+                <tr><td>Linked list</td><td>Fast insert/delete</td><td>Slow indexing</td></tr>
+                <tr><td>Hash table</td><td>O(1) lookup</td><td>No ordering</td></tr>
+                <tr><td>Balanced tree</td><td>Ordered, O(log n)</td><td>More memory</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card accent">
+            <h3>Key Insight</h3>
+            <p>The client should never depend on the representation. If they do, changing
+            it becomes a breaking change.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 12. ABSTRACTION FUNCTION ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">ADT Foundations</span>
+        <h2>The Abstraction Function</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>An <strong>abstraction function</strong> maps each concrete state to the
+            abstract value it represents. It answers: <em>"given this internal state,
+            what abstract value does the client see?"</em></p>
+          </div>
+          <div class="card">
+            <h3>Formal Notation</h3>
+            <pre>AF: ConcreteState → AbstractValue</pre>
+            <p>For example, for a <code>Stack</code> implemented as an array plus a top
+            index:</p>
+            <pre>AF(data, top) = data[0..top-1]</pre>
+            <p>meaning: the abstract stack is the sequence of elements from index 0
+            through <code>top-1</code>.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Why It Matters</h3>
+            <ul>
+              <li>Precisely documents what the internal state means.</li>
+              <li>Guides implementers when writing methods.</li>
+              <li>Makes reasoning about correctness possible.</li>
+              <li>Exposes hidden assumptions early.</li>
+            </ul>
+          </div>
+          <div class="card warn">
+            <h3>Example — Text ADT</h3>
+            <p>A <code>Text</code> implemented as a <code>StringBuilder</code> might have:</p>
+            <pre>AF(buffer) = buffer.toString()</pre>
+            <p>Or for a gap-buffer representation:</p>
+            <pre>AF(before, after) = before + reverse(after)</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 13. REPRESENTATION INVARIANT ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">ADT Foundations</span>
+        <h2>The Representation Invariant</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>A <strong>representation invariant</strong> is a condition that every
+            valid concrete state must satisfy. It rules out states that do not
+            correspond to any abstract value.</p>
+          </div>
+          <div class="card">
+            <h3>Example — IntStack</h3>
+            <pre><span class="cmt">// Invariant:</span>
+<span class="cmt">//   0 &lt;= top &lt;= data.length</span>
+<span class="cmt">//   data[0..top-1] holds the elements</span>
+<span class="cmt">//   data[top..] is unused</span></pre>
+            <p>If <code>top &gt; data.length</code> or <code>top &lt; 0</code>, the state is
+            invalid and the abstraction function is undefined.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Why Invariants Matter</h3>
+            <ul>
+              <li>They define what "valid" means for the representation.</li>
+              <li>Every public method must preserve them.</li>
+              <li>Constructors must establish them.</li>
+              <li>They enable disciplined, bug-free design.</li>
+            </ul>
+          </div>
+          <div class="card warn">
+            <h3>Enforcing Invariants</h3>
+            <ul>
+              <li>Keep fields <code>private</code>.</li>
+              <li>Validate inputs in constructors and setters.</li>
+              <li>Ensure every mutator leaves the invariant intact.</li>
+              <li>Use assertions in development to check invariants.</li>
+            </ul>
+          </div>
+          <div class="card accent">
+            <h3>Text ADT — Invariant</h3>
+            <pre><span class="cmt">// For a StringBuilder-backed Text:</span>
+<span class="cmt">//   buffer != null</span>
+<span class="cmt">//   buffer.length() == current length</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 14. TEXT ADT WORKED EXAMPLE ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">ADT Foundations</span>
+        <h2>Worked Example — The Text ADT</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Abstract Value</h3>
+            <p>A finite sequence of characters. Operations include:
+            <code>length()</code>, <code>charAt(i)</code>, <code>append(c)</code>,
+            <code>insert(i, c)</code>, <code>delete(i)</code>, <code>substring(a,b)</code>,
+            <code>toString()</code>.</p>
+          </div>
+          <div class="card">
+            <h3>Representation Choice</h3>
+            <p>Use a <code>StringBuilder</code> for efficient mutation.</p>
+            <pre><span class="kw">public class</span> Text {
+    <span class="kw">private</span> StringBuilder buffer;
+
+    <span class="cmt">// Abstraction function:</span>
+    <span class="cmt">//   AF(buffer) = buffer.toString()</span>
+
+    <span class="cmt">// Representation invariant:</span>
+    <span class="cmt">//   buffer != null</span>
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Implementation Sketch</h3>
+            <pre><span class="kw">public</span> Text() {
+    buffer = <span class="kw">new</span> StringBuilder();
+}
+
+<span class="kw">public int</span> length() {
+    <span class="kw">return</span> buffer.length();
+}
+
+<span class="kw">public char</span> charAt(<span class="kw">int</span> i) {
+    <span class="kw">if</span> (i &lt; <span class="num">0</span> || i &gt;= buffer.length())
+        <span class="kw">throw new</span> IndexOutOfBoundsException();
+    <span class="kw">return</span> buffer.charAt(i);
+}
+
+<span class="kw">public void</span> append(<span class="kw">char</span> c) {
+    buffer.append(c);
+}
+
+<span class="kw">public void</span> insert(<span class="kw">int</span> i, <span class="kw">char</span> c) {
+    <span class="kw">if</span> (i &lt; <span class="num">0</span> || i &gt; buffer.length())
+        <span class="kw">throw new</span> IndexOutOfBoundsException();
+    buffer.insert(i, c);
+}
+
+<span class="kw">public void</span> delete(<span class="kw">int</span> i) {
+    <span class="kw">if</span> (i &lt; <span class="num">0</span> || i &gt;= buffer.length())
+        <span class="kw">throw new</span> IndexOutOfBoundsException();
+    buffer.deleteCharAt(i);
+}
+
+<span class="ann">@Override</span>
+<span class="kw">public</span> String toString() {
+    <span class="kw">return</span> buffer.toString();
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 15. ADT DECOMPOSITION ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">ADT Foundations</span>
+        <h2>ADT Decomposition &amp; Abstraction</h2>
+      </header>
+      <div class="cols-3">
+        <div class="card accent">
+          <h3>Procedural Abstraction</h3>
+          <p>Hides the <em>steps</em> of a computation behind a named procedure.</p>
+          <pre><span class="kw">double</span> area = circleArea(5);
+
+<span class="kw">static double</span> circleArea(<span class="kw">double</span> r) {
+    <span class="kw">return</span> Math.PI * r * r;
+}</pre>
+        </div>
+        <div class="card accent">
+          <h3>Data Abstraction</h3>
+          <p>Hides the <em>representation</em> of a value behind an interface of
+          operations.</p>
+          <pre><span class="kw">class</span> Stack&lt;T&gt; {
+    <span class="kw">void</span> push(T x) { ... }
+    T pop() { ... }
+}</pre>
+        </div>
+        <div class="card accent">
+          <h3>Type Abstraction</h3>
+          <p>Hides the <em>identity of types</em> behind type parameters — the essence
+          of generics.</p>
+          <pre><span class="kw">class</span> Box&lt;T&gt; {
+    T value;
+}</pre>
+        </div>
+      </div>
+      <div class="card warn" style="margin-top:1.8vh">
+        <h3>Progression</h3>
+        <p>Procedural abstraction is about <em>operations</em>; data abstraction is about
+        <em>representation</em>; type abstraction is about <em>types</em>. Generics sit at
+        the third level.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 16. PARAMETERIZATION & SPECIFICATION ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">ADT Foundations</span>
+        <h2>Parameterization and Specification</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Parameterization</h3>
+            <p>Making an ADT work over an arbitrary type rather than a fixed one.
+            Instead of <code>IntStack</code>, we write <code>Stack&lt;T&gt;</code>.</p>
+            <pre><span class="kw">class</span> Stack&lt;T&gt; {
+    <span class="kw">private</span> List&lt;T&gt; items = <span class="kw">new</span> ArrayList&lt;&gt;();
+    <span class="kw">void</span> push(T item) { items.add(item); }
+    T pop() { <span class="kw">return</span> items.remove(items.size() - <span class="num">1</span>); }
+    <span class="kw">boolean</span> isEmpty() { <span class="kw">return</span> items.isEmpty(); }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Specification</h3>
+            <p>A specification describes what an operation does — preconditions,
+            postconditions, and invariants — without prescribing implementation.</p>
+            <pre><span class="cmt">// push(x)</span>
+<span class="cmt">// Precondition:  none</span>
+<span class="cmt">// Postcondition: top becomes x;</span>
+<span class="cmt">//                size increases by 1</span>
+<span class="cmt">// Invariant:     size &gt;= 0</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>Specification vs Implementation</h3>
+            <p>A good specification tells the caller everything they need and nothing
+            about how it is done. This is what lets the implementation evolve.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 17. SECTION — GENERICS ========== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">03</div>
+      <h1>Generics</h1>
+      <div class="rule"></div>
+      <p>Lectures 28–29. Generics let you write classes, interfaces, and methods that
+      are parameterized over types — giving you the type safety of specific code with
+      the reusability of general code.</p>
+    </div>
+  </section>
+
+  <!-- ========== 18. SIMPLE GENERICS ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Generics</span>
+        <h2>Simple Generics</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card danger">
+            <h3>Before Generics — The Problem</h3>
+            <pre>List list = <span class="kw">new</span> ArrayList();
+list.add(<span class="str">"Hello"</span>);
+list.add(<span class="num">42</span>);       <span class="cmt">// no type check</span>
+
+String s = (String) list.get(<span class="num">1</span>);
+<span class="cmt">// ClassCastException at runtime</span></pre>
+            <p>You must cast, and errors appear only at runtime.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>With Generics — The Solution</h3>
+            <pre>List&lt;String&gt; list = <span class="kw">new</span> ArrayList&lt;&gt;();
+list.add(<span class="str">"Hello"</span>);
+<span class="cmt">// list.add(42); // compile error</span>
+
+String s = list.get(<span class="num">0</span>); <span class="cmt">// no cast</span></pre>
+            <p>Errors appear at compile time; casts are inserted automatically.</p>
+          </div>
+          <div class="card warn">
+            <h3>Benefits</h3>
+            <ul>
+              <li>Compile-time type safety.</li>
+              <li>No explicit casts.</li>
+              <li>Clear intent in the type signature.</li>
+              <li>Reusable across many element types.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 19. GENERIC CLASSES ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Generics</span>
+        <h2>Generic Classes</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Syntax</h3>
+            <pre><span class="kw">class</span> ClassName&lt;T&gt; {
+    <span class="cmt">// T is a type parameter</span>
+}</pre>
+            <p>Conventionally, type parameters use single uppercase letters:
+            <code>T</code> (type), <code>E</code> (element), <code>K</code> (key),
+            <code>V</code> (value), <code>R</code> (result).</p>
+          </div>
+          <div class="card">
+            <h3>Usage</h3>
+            <pre>Box&lt;String&gt; b1 = <span class="kw">new</span> Box&lt;&gt;(<span class="str">"Hello"</span>);
+Box&lt;Integer&gt; b2 = <span class="kw">new</span> Box&lt;&gt;(<span class="num">42</span>);
+
+String s = b1.getValue();   <span class="cmt">// String</span>
+<span class="kw">int</span> n = b2.getValue();      <span class="cmt">// Integer</span></pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Example — Box</h3>
+            <pre><span class="kw">public class</span> Box&lt;T&gt; {
+    <span class="kw">private</span> T value;
+
+    <span class="kw">public</span> Box(T value) {
+        <span class="kw">this</span>.value = value;
+    }
+
+    <span class="kw">public</span> T getValue() {
+        <span class="kw">return</span> value;
+    }
+
+    <span class="kw">public void</span> setValue(T value) {
+        <span class="kw">this</span>.value = value;
+    }
+
+    <span class="ann">@Override</span>
+    <span class="kw">public</span> String toString() {
+        <span class="kw">return</span> <span class="str">"Box["</span> + value + <span class="str">"]"</span>;
+    }
+}</pre>
+          </div>
+          <div class="card warn">
+            <h3>Multiple Type Parameters</h3>
+            <pre><span class="kw">class</span> Pair&lt;K, V&gt; {
+    <span class="kw">private</span> K key;
+    <span class="kw">private</span> V value;
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 20. GENERIC INTERFACES ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Generics</span>
+        <h2>Generic Interfaces</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <pre><span class="kw">interface</span> Pair&lt;K, V&gt; {
+    K getKey();
+    V getValue();
+}</pre>
+          </div>
+          <div class="card">
+            <h3>Implementation</h3>
+            <pre><span class="kw">public class</span> OrderedPair&lt;K, V&gt;
+        <span class="kw">implements</span> Pair&lt;K, V&gt; {
+
+    <span class="kw">private</span> K key;
+    <span class="kw">private</span> V value;
+
+    <span class="kw">public</span> OrderedPair(K key, V value) {
+        <span class="kw">this</span>.key = key;
+        <span class="kw">this</span>.value = value;
+    }
+
+    <span class="ann">@Override</span>
+    <span class="kw">public</span> K getKey() { <span class="kw">return</span> key; }
+
+    <span class="ann">@Override</span>
+    <span class="kw">public</span> V getValue() { <span class="kw">return</span> value; }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Usage</h3>
+            <pre>Pair&lt;String, Integer&gt; p =
+    <span class="kw">new</span> OrderedPair&lt;&gt;(<span class="str">"age"</span>, <span class="num">25</span>);
+
+System.out.println(p.getKey());   <span class="cmt">// age</span>
+System.out.println(p.getValue()); <span class="cmt">// 25</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>Non-Generic Implementation</h3>
+            <p>A class may implement a generic interface with concrete types:</p>
+            <pre><span class="kw">class</span> StringIntPair
+        <span class="kw">implements</span> Pair&lt;String, Integer&gt; {
+    <span class="cmt">// ...</span>
+}</pre>
+          </div>
+          <div class="card accent">
+            <h3>Reusable Type-Safe Components</h3>
+            <p>Generic interfaces are the backbone of reusable APIs — the client chooses
+            the type, the interface guarantees the contract.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 21. GENERIC METHODS ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Generics</span>
+        <h2>Generic Methods</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Syntax</h3>
+            <pre><span class="kw">public static</span> &lt;T&gt; ReturnType methodName(T arg) { ... }</pre>
+            <p>The type parameter is declared before the return type, independent of
+            any class-level type parameter.</p>
+          </div>
+          <div class="card">
+            <h3>Example — printArray</h3>
+            <pre><span class="kw">public static</span> &lt;T&gt; <span class="kw">void</span> printArray(T[] array) {
+    <span class="kw">for</span> (T element : array) {
+        System.out.print(element + <span class="str">" "</span>);
+    }
+    System.out.println();
+}</pre>
+            <pre>Integer[] nums = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>};
+String[] names = {<span class="str">"Alice"</span>, <span class="str">"Bob"</span>};
+
+printArray(nums);   <span class="cmt">// 1 2 3</span>
+printArray(names);  <span class="cmt">// Alice Bob</span></pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Example — swap</h3>
+            <pre><span class="kw">public static</span> &lt;T&gt; <span class="kw">void</span> swap(T[] arr,
+                              <span class="kw">int</span> i, <span class="kw">int</span> j) {
+    T temp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = temp;
+}</pre>
+          </div>
+          <div class="card warn">
+            <h3>Type Inference</h3>
+            <p>Java usually infers the type parameter from the arguments. You rarely
+            need to specify it explicitly.</p>
+            <pre>Util.&lt;Integer&gt;printArray(nums); <span class="cmt">// explicit (rare)</span>
+printArray(nums);                <span class="cmt">// inferred (usual)</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 22. BOUNDED TYPE PARAMETERS ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Generics</span>
+        <h2>Bounded Type Parameters</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>You can restrict the types that a type parameter accepts using the
+            <code>extends</code> keyword (for classes and interfaces).</p>
+            <pre>&lt;T <span class="kw">extends</span> Number&gt;
+&lt;T <span class="kw">extends</span> Comparable&lt;T&gt;&gt;
+&lt;T <span class="kw">extends</span> Number &amp; Comparable&lt;T&gt;&gt;</pre>
+          </div>
+          <div class="card">
+            <h3>Example — NumberBox</h3>
+            <pre><span class="kw">public class</span> NumberBox&lt;T <span class="kw">extends</span> Number&gt; {
+    <span class="kw">private</span> T value;
+
+    <span class="kw">public</span> NumberBox(T value) {
+        <span class="kw">this</span>.value = value;
+    }
+
+    <span class="kw">public double</span> doubleValue() {
+        <span class="kw">return</span> value.doubleValue();
+    }
+}</pre>
+            <pre>NumberBox&lt;Integer&gt; ib = <span class="kw">new</span> NumberBox&lt;&gt;(<span class="num">42</span>);
+NumberBox&lt;Double&gt; db = <span class="kw">new</span> NumberBox&lt;&gt;(<span class="num">3.14</span>);
+<span class="cmt">// NumberBox&lt;String&gt; sb = ...; // compile error</span></pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Example — Generic max</h3>
+            <pre><span class="kw">public static</span> &lt;T <span class="kw">extends</span> Comparable&lt;T&gt;&gt;
+T max(T a, T b) {
+    <span class="kw">return</span> (a.compareTo(b) &gt; <span class="num">0</span>) ? a : b;
+}
+
+max(<span class="num">10</span>, <span class="num">20</span>);                 <span class="cmt">// 20</span>
+max(<span class="str">"Apple"</span>, <span class="str">"Banana"</span>);      <span class="cmt">// Banana</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>Why Bound?</h3>
+            <p>Without a bound, <code>T</code> is treated as <code>Object</code>, and
+            you cannot call methods like <code>doubleValue()</code> or
+            <code>compareTo()</code>. The bound exposes the needed API.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 23. WILDCARDS ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Generics</span>
+        <h2>Wildcards</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Three Forms</h3>
+            <table>
+              <thead><tr><th>Wildcard</th><th>Meaning</th></tr></thead>
+              <tbody>
+                <tr><td><code>?</code></td><td>Any type</td></tr>
+                <tr><td><code>? extends T</code></td><td>T or a subtype (upper bound)</td></tr>
+                <tr><td><code>? super T</code></td><td>T or a supertype (lower bound)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card">
+            <h3>Example — Upper Bound</h3>
+            <pre><span class="kw">public static double</span> sumOfList(
+        List&lt;? <span class="kw">extends</span> Number&gt; list) {
+    <span class="kw">double</span> sum = <span class="num">0</span>;
+    <span class="kw">for</span> (Number n : list) {
+        sum += n.doubleValue();
+    }
+    <span class="kw">return</span> sum;
+}</pre>
+            <pre>List&lt;Integer&gt; ints = List.of(<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>);
+List&lt;Double&gt; dbls = List.of(<span class="num">1.5</span>, <span class="num">2.5</span>);
+
+sumOfList(ints);   <span class="cmt">// 6.0</span>
+sumOfList(dbls);   <span class="cmt">// 4.0</span></pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>PECS Principle</h3>
+            <p><strong>P</strong>roducer <strong>E</strong>xtends,
+            <strong>C</strong>onsumer <strong>S</strong>uper.</p>
+            <ul>
+              <li>If you only <em>read</em> from a structure: <code>? extends T</code>.</li>
+              <li>If you only <em>write</em> to it: <code>? super T</code>.</li>
+              <li>If you do both: no wildcard.</li>
+            </ul>
+          </div>
+          <div class="card warn">
+            <h3>Lower Bound Example</h3>
+            <pre><span class="kw">public static void</span> addInts(
+        List&lt;? <span class="kw">super</span> Integer&gt; list) {
+    list.add(<span class="num">42</span>);   <span class="cmt">// safe to write</span>
+    <span class="cmt">// Integer x = list.get(0); // not safe to read</span>
+}</pre>
+          </div>
+          <div class="card danger">
+            <h3>Unbounded Wildcard</h3>
+            <pre><span class="kw">public static void</span> printAll(List&lt;?&gt; list) {
+    <span class="kw">for</span> (Object o : list) {
+        System.out.println(o);
+    }
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 24. GENERIC SUBTYPING ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Generics</span>
+        <h2>Generic Subtyping</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card danger">
+            <h3>The Surprising Rule</h3>
+            <p><code>List&lt;Integer&gt;</code> is <strong>not</strong> a subtype of
+            <code>List&lt;Number&gt;</code>, even though <code>Integer</code> is a
+            subtype of <code>Number</code>.</p>
+            <pre>List&lt;Integer&gt; ints = <span class="kw">new</span> ArrayList&lt;&gt;();
+<span class="cmt">// List&lt;Number&gt; nums = ints; // compile error</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>Why?</h3>
+            <p>If the assignment were allowed, you could add a <code>Double</code> to the
+            list via the <code>List&lt;Number&gt;</code> reference, corrupting the
+            original <code>List&lt;Integer&gt;</code>.</p>
+            <pre>nums.add(<span class="num">3.14</span>); <span class="cmt">// would corrupt ints</span>
+Integer i = ints.get(<span class="num">0</span>); <span class="cmt">// ClassCastException</span></pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>The Correct Relationship</h3>
+            <p>With wildcards, you can express covariance and contravariance:</p>
+            <pre>List&lt;Integer&gt; ints = <span class="kw">new</span> ArrayList&lt;&gt;();
+
+<span class="cmt">// Covariant read-only view</span>
+List&lt;? <span class="kw">extends</span> Number&gt; readOnly = ints;
+
+<span class="cmt">// Contravariant write-only view</span>
+List&lt;? <span class="kw">super</span> Integer&gt; writeOnly = ints;</pre>
+          </div>
+          <div class="card">
+            <h3>Subtyping Rules Summary</h3>
+            <table>
+              <thead><tr><th>From</th><th>To</th><th>Allowed?</th></tr></thead>
+              <tbody>
+                <tr><td><code>List&lt;Integer&gt;</code></td><td><code>List&lt;?&gt;</code></td><td>Yes</td></tr>
+                <tr><td><code>List&lt;Integer&gt;</code></td><td><code>List&lt;? extends Number&gt;</code></td><td>Yes</td></tr>
+                <tr><td><code>List&lt;Integer&gt;</code></td><td><code>List&lt;? super Integer&gt;</code></td><td>Yes</td></tr>
+                <tr><td><code>List&lt;Integer&gt;</code></td><td><code>List&lt;Number&gt;</code></td><td>No</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 25. TYPE ERASURE ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Generics</span>
+        <h2>Type Erasure</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Definition</h3>
+            <p>Java implements generics through <strong>type erasure</strong>: the
+            compiler removes all type parameters and inserts casts where necessary.
+            At runtime, generic type information is gone.</p>
+            <pre>List&lt;String&gt; list = <span class="kw">new</span> ArrayList&lt;&gt;();
+<span class="cmt">// At runtime this is just ArrayList</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>Consequences</h3>
+            <ul>
+              <li>Cannot use <code>instanceof</code> with parameterized types.</li>
+              <li>Cannot create arrays of generic types.</li>
+              <li>Cannot overload methods that differ only in type parameters.</li>
+              <li>Cannot call <code>new T()</code> or <code>T.class</code>.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card danger">
+            <h3>Compile Errors</h3>
+            <pre><span class="cmt">// if (list instanceof List&lt;String&gt;) { }</span>
+<span class="cmt">// T[] arr = new T[10];</span>
+<span class="cmt">// void m(List&lt;String&gt; l) { }</span>
+<span class="cmt">// void m(List&lt;Integer&gt; l) { } // same erasure</span></pre>
+          </div>
+          <div class="card accent">
+            <h3>Why Type Erasure?</h3>
+            <p>It preserved backward compatibility with pre-generics code. The JVM
+            never had to change its bytecode format — generics are a compile-time
+            feature.</p>
+          </div>
+          <div class="card">
+            <h3>Workaround — Class Token</h3>
+            <pre><span class="kw">public static</span> &lt;T&gt; T create(
+        Class&lt;T&gt; clazz) <span class="kw">throws</span> Exception {
+    <span class="kw">return</span> clazz.getDeclaredConstructor().newInstance();
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 26. SECTION — GENERIC PRACTICAL ========== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">04</div>
+      <h1>Generic Practical</h1>
+      <div class="rule"></div>
+      <p>Lecture 26. Hands-on with generic <code>Pair</code>, <code>Box</code>, and
+      <code>Stack</code>; utility methods; wildcard exercises; and a generic
+      repository interface.</p>
+    </div>
+  </section>
+
+  <!-- ========== 27. GENERIC PAIR ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Generic Practical</span>
+        <h2>Generic Pair</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Implementation</h3>
+            <pre><span class="kw">public class</span> Pair&lt;A, B&gt; {
+    <span class="kw">private final</span> A first;
+    <span class="kw">private final</span> B second;
+
+    <span class="kw">public</span> Pair(A first, B second) {
+        <span class="kw">this</span>.first = first;
+        <span class="kw">this</span>.second = second;
+    }
+
+    <span class="kw">public</span> A getFirst() { <span class="kw">return</span> first; }
+    <span class="kw">public</span> B getSecond() { <span class="kw">return</span> second; }
+
+    <span class="cmt">// Factory method</span>
+    <span class="kw">public static</span> &lt;X, Y&gt; Pair&lt;X, Y&gt; of(X x, Y y) {
+        <span class="kw">return new</span> Pair&lt;&gt;(x, y);
+    }
+
+    <span class="ann">@Override</span>
+    <span class="kw">public</span> String toString() {
+        <span class="kw">return</span> <span class="str">"("</span> + first + <span class="str">", "</span> + second + <span class="str">")"</span>;
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Usage</h3>
+            <pre>Pair&lt;String, Integer&gt; p1 =
+    Pair.of(<span class="str">"age"</span>, <span class="num">25</span>);
+
+Pair&lt;Double, Boolean&gt; p2 =
+    Pair.of(<span class="num">3.14</span>, <span class="kw">true</span>);
+
+System.out.println(p1); <span class="cmt">// (age, 25)</span>
+System.out.println(p2); <span class="cmt">// (3.14, true)</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>Design Notes</h3>
+            <ul>
+              <li>Fields are <code>final</code> — a Pair is immutable.</li>
+              <li>Factory method <code>of</code> avoids the <code>new</code> noise.</li>
+              <li>The type parameters <code>A</code> and <code>B</code> are independent.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 28. GENERIC STACK ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Generic Practical</span>
+        <h2>Generic Stack</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Implementation</h3>
+            <pre><span class="kw">import</span> java.util.ArrayList;
+<span class="kw">import</span> java.util.List;
+<span class="kw">import</span> java.util.EmptyStackException;
+
+<span class="kw">public class</span> Stack&lt;T&gt; {
+    <span class="kw">private</span> List&lt;T&gt; items = <span class="kw">new</span> ArrayList&lt;&gt;();
+
+    <span class="kw">public void</span> push(T item) {
+        items.add(item);
+    }
+
+    <span class="kw">public</span> T pop() {
+        <span class="kw">if</span> (items.isEmpty())
+            <span class="kw">throw new</span> EmptyStackException();
+        <span class="kw">return</span> items.remove(items.size() - <span class="num">1</span>);
+    }
+
+    <span class="kw">public</span> T peek() {
+        <span class="kw">if</span> (items.isEmpty())
+            <span class="kw">throw new</span> EmptyStackException();
+        <span class="kw">return</span> items.get(items.size() - <span class="num">1</span>);
+    }
+
+    <span class="kw">public boolean</span> isEmpty() {
+        <span class="kw">return</span> items.isEmpty();
+    }
+
+    <span class="kw">public int</span> size() {
+        <span class="kw">return</span> items.size();
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Usage</h3>
+            <pre>Stack&lt;Integer&gt; s = <span class="kw">new</span> Stack&lt;&gt;();
+s.push(<span class="num">10</span>);
+s.push(<span class="num">20</span>);
+s.push(<span class="num">30</span>);
+
+System.out.println(s.pop());   <span class="cmt">// 30</span>
+System.out.println(s.peek());  <span class="cmt">// 20</span>
+System.out.println(s.size());  <span class="cmt">// 2</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>ADT Perspective</h3>
+            <ul>
+              <li>Abstract value: a LIFO sequence of items.</li>
+              <li>Abstraction function: <code>AF(items) = the sequence of elements</code>.</li>
+              <li>Invariant: <code>items != null</code>.</li>
+              <li>Client only sees <code>push</code>, <code>pop</code>, <code>peek</code>, <code>isEmpty</code>, <code>size</code>.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 29. GENERIC UTILITY METHODS ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Generic Practical</span>
+        <h2>Generic Utility Methods</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>max</h3>
+            <pre><span class="kw">public static</span> &lt;T <span class="kw">extends</span> Comparable&lt;T&gt;&gt;
+T max(T a, T b) {
+    <span class="kw">return</span> (a.compareTo(b) &gt; <span class="num">0</span>) ? a : b;
+}</pre>
+          </div>
+          <div class="card accent">
+            <h3>min</h3>
+            <pre><span class="kw">public static</span> &lt;T <span class="kw">extends</span> Comparable&lt;T&gt;&gt;
+T min(T a, T b) {
+    <span class="kw">return</span> (a.compareTo(b) &lt; <span class="num">0</span>) ? a : b;
+}</pre>
+          </div>
+          <div class="card accent">
+            <h3>filter</h3>
+            <pre><span class="kw">public static</span> &lt;T&gt; List&lt;T&gt; filter(
+        List&lt;T&gt; list,
+        Predicate&lt;T&gt; predicate) {
+    List&lt;T&gt; result = <span class="kw">new</span> ArrayList&lt;&gt;();
+    <span class="kw">for</span> (T item : list) {
+        <span class="kw">if</span> (predicate.test(item))
+            result.add(item);
+    }
+    <span class="kw">return</span> result;
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>map</h3>
+            <pre><span class="kw">public static</span> &lt;T, R&gt; List&lt;R&gt; map(
+        List&lt;T&gt; list,
+        Function&lt;T, R&gt; mapper) {
+    List&lt;R&gt; result = <span class="kw">new</span> ArrayList&lt;&gt;();
+    <span class="kw">for</span> (T item : list) {
+        result.add(mapper.apply(item));
+    }
+    <span class="kw">return</span> result;
+}</pre>
+          </div>
+          <div class="card">
+            <h3>Usage</h3>
+            <pre>List&lt;Integer&gt; nums = List.of(<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>);
+
+List&lt;Integer&gt; evens = filter(nums, n -> n % <span class="num">2</span> == <span class="num">0</span>);
+List&lt;String&gt; strs = map(nums, n -> <span class="str">"#"</span> + n);
+
+System.out.println(evens); <span class="cmt">// [2, 4]</span>
+System.out.println(strs);  <span class="cmt">// [#1, #2, #3, #4, #5]</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>Design Notes</h3>
+            <p>Notice how <code>&lt;T&gt;</code> and <code>&lt;T, R&gt;</code> are
+            declared on the method, not on a class. These are standalone, reusable
+            building blocks.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 30. WILDCARD EXERCISES ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Generic Practical</span>
+        <h2>Wildcard Exercises</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Exercise 1 — Sum of Numbers</h3>
+            <pre><span class="kw">public static double</span> sum(
+        List&lt;? <span class="kw">extends</span> Number&gt; list) {
+    <span class="kw">double</span> total = <span class="num">0</span>;
+    <span class="kw">for</span> (Number n : list) {
+        total += n.doubleValue();
+    }
+    <span class="kw">return</span> total;
+}</pre>
+            <pre>sum(List.of(<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>));       <span class="cmt">// 6.0</span>
+sum(List.of(<span class="num">1.5</span>, <span class="num">2.5</span>));   <span class="cmt">// 4.0</span></pre>
+          </div>
+          <div class="card accent">
+            <h3>Exercise 2 — Add Integers</h3>
+            <pre><span class="kw">public static void</span> addAll(
+        List&lt;? <span class="kw">super</span> Integer&gt; list,
+        <span class="kw">int</span>... values) {
+    <span class="kw">for</span> (<span class="kw">int</span> v : values) {
+        list.add(v);
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Exercise 3 — Copy</h3>
+            <pre><span class="kw">public static</span> &lt;T&gt; <span class="kw">void</span> copy(
+        List&lt;? <span class="kw">extends</span> T&gt; source,
+        List&lt;? <span class="kw">super</span> T&gt; target) {
+    <span class="kw">for</span> (T item : source) {
+        target.add(item);
+    }
+}</pre>
+            <p>This is the standard shape of <code>Collections.copy</code>.</p>
+          </div>
+          <div class="card warn">
+            <h3>Pattern</h3>
+            <p>Notice the PECS pattern in every example:</p>
+            <ul>
+              <li>Reading → <code>extends</code>.</li>
+              <li>Writing → <code>super</code>.</li>
+              <li>Doing both → plain <code>T</code>.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 31. GENERIC REPOSITORY ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Generic Practical</span>
+        <h2>Generic Repository Interface</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Interface</h3>
+            <pre><span class="kw">public interface</span> Repository&lt;T, ID&gt; {
+    <span class="kw">void</span> save(T entity);
+    Optional&lt;T&gt; findById(ID id);
+    List&lt;T&gt; findAll();
+    <span class="kw">boolean</span> deleteById(ID id);
+    <span class="kw">long</span> count();
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Implementation</h3>
+            <pre><span class="kw">public class</span> InMemoryRepository&lt;T, ID&gt;
+        <span class="kw">implements</span> Repository&lt;T, ID&gt; {
+
+    <span class="kw">private final</span> Map&lt;ID, T&gt; store =
+        <span class="kw">new</span> HashMap&lt;&gt;();
+    <span class="kw">private final</span> Function&lt;T, ID&gt; idExtractor;
+
+    <span class="kw">public</span> InMemoryRepository(
+            Function&lt;T, ID&gt; idExtractor) {
+        <span class="kw">this</span>.idExtractor = idExtractor;
+    }
+
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> save(T entity) {
+        store.put(idExtractor.apply(entity), entity);
+    }
+
+    <span class="ann">@Override</span>
+    <span class="kw">public</span> Optional&lt;T&gt; findById(ID id) {
+        <span class="kw">return</span> Optional.ofNullable(store.get(id));
+    }
+
+    <span class="ann">@Override</span>
+    <span class="kw">public</span> List&lt;T&gt; findAll() {
+        <span class="kw">return new</span> ArrayList&lt;&gt;(store.values());
+    }
+
+    <span class="ann">@Override</span>
+    <span class="kw">public boolean</span> deleteById(ID id) {
+        <span class="kw">return</span> store.remove(id) != <span class="kw">null</span>;
+    }
+
+    <span class="ann">@Override</span>
+    <span class="kw">public long</span> count() {
+        <span class="kw">return</span> store.size();
+    }
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 32. REPOSITORY USAGE ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Generic Practical</span>
+        <h2>Repository Usage</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Domain Classes</h3>
+            <pre><span class="kw">class</span> Student {
+    <span class="kw">final int</span> id;
+    <span class="kw">final</span> String name;
+
+    Student(<span class="kw">int</span> id, String name) {
+        <span class="kw">this</span>.id = id;
+        <span class="kw">this</span>.name = name;
+    }
+
+    <span class="kw">int</span> getId() { <span class="kw">return</span> id; }
+
+    <span class="ann">@Override</span>
+    <span class="kw">public</span> String toString() {
+        <span class="kw">return</span> id + <span class="str">":"</span> + name;
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Usage</h3>
+            <pre>Repository&lt;Student, Integer&gt; repo =
+    <span class="kw">new</span> InMemoryRepository&lt;&gt;(Student::getId);
+
+repo.save(<span class="kw">new</span> Student(<span class="num">1</span>, <span class="str">"Alice"</span>));
+repo.save(<span class="kw">new</span> Student(<span class="num">2</span>, <span class="str">"Bob"</span>));
+
+repo.findById(<span class="num">1</span>).ifPresent(System.out::println);
+<span class="cmt">// 1:Alice</span>
+
+System.out.println(repo.count()); <span class="cmt">// 2</span>
+
+repo.findAll().forEach(System.out::println);
+<span class="cmt">// 1:Alice</span>
+<span class="cmt">// 2:Bob</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>Design Points</h3>
+            <ul>
+              <li>Generic over <code>T</code> (entity) and <code>ID</code> (identifier).</li>
+              <li>Uses <code>Optional</code> to avoid returning <code>null</code>.</li>
+              <li>Uses <code>Function&lt;T, ID&gt;</code> to extract the identifier.</li>
+              <li>One implementation works for any entity type.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 33. SECTION — COLLECTIONS FRAMEWORK ========== -->
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="num">05</div>
+      <h1>Collections Framework</h1>
+      <div class="rule"></div>
+      <p>Lecture 30. The Java Collections Framework provides ready-made,
+      high-performance data structures that implement the classic ADTs. Choosing
+      the right one is a core skill.</p>
+    </div>
+  </section>
+
+  <!-- ========== 34. COLLECTIONS ARCHITECTURE ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Collections Framework</span>
+        <h2>Collection Framework Architecture</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Core Interfaces</h3>
+            <pre>Iterable
+  └── Collection
+      ├── List
+      ├── Set
+      │    └── SortedSet
+      └── Queue
+           └── Deque
+
+Map (separate hierarchy)
+  └── SortedMap</pre>
+          </div>
+          <div class="card warn">
+            <h3>Key Distinction</h3>
+            <p><code>Collection</code> is the root for single-element groups.
+            <code>Map</code> is a separate hierarchy for key-value pairs.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Common Implementations</h3>
+            <table>
+              <thead><tr><th>Interface</th><th>Implementations</th></tr></thead>
+              <tbody>
+                <tr><td><code>List</code></td><td>ArrayList, LinkedList, Vector</td></tr>
+                <tr><td><code>Set</code></td><td>HashSet, LinkedHashSet, TreeSet</td></tr>
+                <tr><td><code>Queue</code></td><td>LinkedList, PriorityQueue, ArrayDeque</td></tr>
+                <tr><td><code>Deque</code></td><td>ArrayDeque, LinkedList</td></tr>
+                <tr><td><code>Map</code></td><td>HashMap, LinkedHashMap, TreeMap, Hashtable</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 35. LIST ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Collections Framework</span>
+        <h2>List — ArrayList and LinkedList</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>List Characteristics</h3>
+            <ul>
+              <li>Ordered sequence.</li>
+              <li>Allows duplicates.</li>
+              <li>Index-based access.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>ArrayList vs LinkedList</h3>
+            <table>
+              <thead><tr><th>Operation</th><th>ArrayList</th><th>LinkedList</th></tr></thead>
+              <tbody>
+                <tr><td>get(i)</td><td>O(1)</td><td>O(n)</td></tr>
+                <tr><td>add(end)</td><td>Amortized O(1)</td><td>O(1)</td></tr>
+                <tr><td>add(middle)</td><td>O(n)</td><td>O(1) after locate</td></tr>
+                <tr><td>remove(i)</td><td>O(n)</td><td>O(n)</td></tr>
+                <tr><td>Memory</td><td>Compact</td><td>More overhead</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Common Operations</h3>
+            <pre>List&lt;String&gt; list = <span class="kw">new</span> ArrayList&lt;&gt;();
+
+list.add(<span class="str">"Alice"</span>);
+list.add(<span class="str">"Bob"</span>);
+list.add(<span class="num">1</span>, <span class="str">"Charlie"</span>);
+
+System.out.println(list);       <span class="cmt">// [Alice, Charlie, Bob]</span>
+System.out.println(list.get(<span class="num">1</span>)); <span class="cmt">// Charlie</span>
+
+list.set(<span class="num">0</span>, <span class="str">"Alicia"</span>);
+list.remove(<span class="str">"Bob"</span>);
+
+System.out.println(list.size());      <span class="cmt">// 2</span>
+System.out.println(list.contains(<span class="str">"Alice"</span>)); <span class="cmt">// false</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>Rule of Thumb</h3>
+            <p>Prefer <code>ArrayList</code> unless you need frequent insertion or
+            removal at the front of a large list.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 36. SET ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Collections Framework</span>
+        <h2>Set — HashSet and TreeSet</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Set Characteristics</h3>
+            <ul>
+              <li>No duplicates.</li>
+              <li>No index-based access.</li>
+              <li>Order depends on implementation.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>HashSet vs TreeSet</h3>
+            <table>
+              <thead><tr><th>Aspect</th><th>HashSet</th><th>TreeSet</th></tr></thead>
+              <tbody>
+                <tr><td>Ordering</td><td>None</td><td>Sorted</td></tr>
+                <tr><td>Lookup</td><td>O(1) average</td><td>O(log n)</td></tr>
+                <tr><td>Requires</td><td>equals + hashCode</td><td>Comparable or Comparator</td></tr>
+                <tr><td>Null allowed</td><td>One null</td><td>No null (for natural order)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>HashSet Example</h3>
+            <pre>Set&lt;String&gt; set = <span class="kw">new</span> HashSet&lt;&gt;();
+set.add(<span class="str">"Java"</span>);
+set.add(<span class="str">"Python"</span>);
+set.add(<span class="str">"Java"</span>);   <span class="cmt">// ignored (duplicate)</span>
+
+System.out.println(set.size());       <span class="cmt">// 2</span>
+System.out.println(set.contains(<span class="str">"Java"</span>)); <span class="cmt">// true</span></pre>
+          </div>
+          <div class="card">
+            <h3>TreeSet Example</h3>
+            <pre>Set&lt;Integer&gt; sorted = <span class="kw">new</span> TreeSet&lt;&gt;();
+sorted.add(<span class="num">30</span>);
+sorted.add(<span class="num">10</span>);
+sorted.add(<span class="num">20</span>);
+
+System.out.println(sorted); <span class="cmt">// [10, 20, 30]</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>Key Reminder</h3>
+            <p>For <code>HashSet</code> to work correctly, elements must override both
+            <code>equals()</code> and <code>hashCode()</code>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 37. QUEUE AND DEQUE ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Collections Framework</span>
+        <h2>Queue, Deque and PriorityQueue</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Queue (FIFO)</h3>
+            <pre>Queue&lt;String&gt; queue = <span class="kw">new</span> LinkedList&lt;&gt;();
+queue.offer(<span class="str">"A"</span>);
+queue.offer(<span class="str">"B"</span>);
+queue.offer(<span class="str">"C"</span>);
+
+System.out.println(queue.poll()); <span class="cmt">// A</span>
+System.out.println(queue.peek()); <span class="cmt">// B</span></pre>
+          </div>
+          <div class="card accent">
+            <h3>Deque (Double-Ended)</h3>
+            <pre>Deque&lt;String&gt; deque = <span class="kw">new</span> ArrayDeque&lt;&gt;();
+deque.addFirst(<span class="str">"B"</span>);
+deque.addFirst(<span class="str">"A"</span>);
+deque.addLast(<span class="str">"C"</span>);
+
+System.out.println(deque); <span class="cmt">// [A, B, C]</span>
+
+deque.removeFirst();       <span class="cmt">// A</span>
+deque.removeLast();        <span class="cmt">// C</span></pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>PriorityQueue</h3>
+            <p>A queue where elements are dequeued according to priority rather
+            than insertion order. Uses natural ordering or a <code>Comparator</code>.</p>
+            <pre>PriorityQueue&lt;Integer&gt; pq = <span class="kw">new</span> PriorityQueue&lt;&gt;();
+pq.offer(<span class="num">30</span>);
+pq.offer(<span class="num">10</span>);
+pq.offer(<span class="num">20</span>);
+
+<span class="kw">while</span> (!pq.isEmpty()) {
+    System.out.println(pq.poll());
+}
+<span class="cmt">// 10</span>
+<span class="cmt">// 20</span>
+<span class="cmt">// 30</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>ArrayDeque</h3>
+            <p>Prefer <code>ArrayDeque</code> over <code>LinkedList</code> for stack and
+            queue use — it is faster and uses less memory.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 38. MAP ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Collections Framework</span>
+        <h2>Map — HashMap and LinkedHashMap</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Map Characteristics</h3>
+            <ul>
+              <li>Stores key-value pairs.</li>
+              <li>Keys are unique.</li>
+              <li>Not part of the <code>Collection</code> hierarchy.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>HashMap Example</h3>
+            <pre>Map&lt;String, Integer&gt; ages = <span class="kw">new</span> HashMap&lt;&gt;();
+ages.put(<span class="str">"Alice"</span>, <span class="num">25</span>);
+ages.put(<span class="str">"Bob"</span>, <span class="num">30</span>);
+ages.put(<span class="str">"Alice"</span>, <span class="num">26</span>); <span class="cmt">// overwrites</span>
+
+System.out.println(ages.get(<span class="str">"Alice"</span>)); <span class="cmt">// 26</span>
+System.out.println(ages.containsKey(<span class="str">"Bob"</span>)); <span class="cmt">// true</span>
+System.out.println(ages.size()); <span class="cmt">// 2</span></pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>Iterating a Map</h3>
+            <pre><span class="kw">for</span> (Map.Entry&lt;String, Integer&gt; e : ages.entrySet()) {
+    System.out.println(e.getKey() + <span class="str">" → "</span> + e.getValue());
+}
+
+<span class="cmt">// Or with forEach (Java 8+)</span>
+ages.forEach((k, v) -> System.out.println(k + <span class="str">" → "</span> + v));</pre>
+          </div>
+          <div class="card warn">
+            <h3>HashMap vs LinkedHashMap vs TreeMap</h3>
+            <table>
+              <thead><tr><th>Implementation</th><th>Order</th></tr></thead>
+              <tbody>
+                <tr><td>HashMap</td><td>No order</td></tr>
+                <tr><td>LinkedHashMap</td><td>Insertion order</td></tr>
+                <tr><td>TreeMap</td><td>Sorted by key</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 39. ITERATOR ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Collections Framework</span>
+        <h2>Iteration</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Enhanced For-Loop</h3>
+            <p>The preferred way to iterate when you do not need to remove elements.</p>
+            <pre>List&lt;String&gt; names = List.of(<span class="str">"Alice"</span>, <span class="str">"Bob"</span>);
+
+<span class="kw">for</span> (String name : names) {
+    System.out.println(name);
+}</pre>
+          </div>
+          <div class="card">
+            <h3>Explicit Iterator</h3>
+            <p>Required when you need to remove elements during iteration.</p>
+            <pre>Iterator&lt;String&gt; it = names.iterator();
+<span class="kw">while</span> (it.hasNext()) {
+    String name = it.next();
+    <span class="kw">if</span> (name.startsWith(<span class="str">"A"</span>)) {
+        it.remove();  <span class="cmt">// safe removal</span>
+    }
+}</pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card danger">
+            <h3>Concurrent Modification</h3>
+            <pre><span class="cmt">// BAD</span>
+<span class="kw">for</span> (String name : names) {
+    <span class="kw">if</span> (name.equals(<span class="str">"Bob"</span>)) {
+        names.remove(name); <span class="cmt">// ConcurrentModificationException</span>
+    }
+}</pre>
+            <p>Modifying a collection structurally while iterating with a for-each
+            throws this exception.</p>
+          </div>
+          <div class="card accent">
+            <h3>forEach Method (Java 8+)</h3>
+            <pre>names.forEach(System.out::println);
+
+ages.forEach((k, v) ->
+    System.out.println(k + <span class="str">": "</span> + v));</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 40. COMPARABLE AND COMPARATOR ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Collections Framework</span>
+        <h2>Object Ordering — Comparable &amp; Comparator</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Comparable&lt;T&gt; — Natural Ordering</h3>
+            <p>Implemented by the class itself. Defines the "natural" ordering of its
+            instances.</p>
+            <pre><span class="kw">public class</span> Student
+        <span class="kw">implements</span> Comparable&lt;Student&gt; {
+
+    <span class="kw">private int</span> rollNo;
+    <span class="kw">private</span> String name;
+
+    <span class="ann">@Override</span>
+    <span class="kw">public int</span> compareTo(Student other) {
+        <span class="kw">return</span> Integer.compare(
+            <span class="kw">this</span>.rollNo, other.rollNo);
+    }
+}</pre>
+            <pre>List&lt;Student&gt; students = <span class="kw">new</span> ArrayList&lt;&gt;();
+<span class="cmt">// ... add students ...</span>
+Collections.sort(students); <span class="cmt">// uses compareTo</span></pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>Comparator&lt;T&gt; — Custom Ordering</h3>
+            <p>A separate object that defines an ordering. Useful when you need
+            multiple orderings, or the class is not under your control.</p>
+            <pre>Comparator&lt;Student&gt; byName =
+    (s1, s2) -> s1.getName().compareTo(s2.getName());
+
+Comparator&lt;Student&gt; byGpaDesc =
+    Comparator.comparingDouble(Student::getGpa)
+              .reversed();
+
+students.sort(byName);
+students.sort(byGpaDesc);</pre>
+          </div>
+          <div class="card warn">
+            <h3>Choosing</h3>
+            <ul>
+              <li>Use <code>Comparable</code> for a single, obvious natural order.</li>
+              <li>Use <code>Comparator</code> for alternate or context-specific orderings.</li>
+              <li>TreeSet and TreeMap need one of the two.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 41. SORTEDSET AND SORTEDMAP ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Collections Framework</span>
+        <h2>SortedSet and SortedMap</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>SortedSet</h3>
+            <p>A <code>Set</code> that maintains its elements in sorted order.
+            Implemented by <code>TreeSet</code>.</p>
+            <pre>SortedSet&lt;Integer&gt; set = <span class="kw">new</span> TreeSet&lt;&gt;();
+set.add(<span class="num">30</span>);
+set.add(<span class="num">10</span>);
+set.add(<span class="num">20</span>);
+
+System.out.println(set.first()); <span class="cmt">// 10</span>
+System.out.println(set.last());  <span class="cmt">// 30</span>
+System.out.println(set.headSet(<span class="num">20</span>)); <span class="cmt">// [10]</span>
+System.out.println(set.tailSet(<span class="num">20</span>)); <span class="cmt">// [20, 30]</span></pre>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card accent">
+            <h3>SortedMap</h3>
+            <p>A <code>Map</code> that maintains its keys in sorted order.
+            Implemented by <code>TreeMap</code>.</p>
+            <pre>SortedMap&lt;String, Integer&gt; map = <span class="kw">new</span> TreeMap&lt;&gt;();
+map.put(<span class="str">"Charlie"</span>, <span class="num">3</span>);
+map.put(<span class="str">"Alice"</span>, <span class="num">1</span>);
+map.put(<span class="str">"Bob"</span>, <span class="num">2</span>);
+
+System.out.println(map.firstKey());  <span class="cmt">// Alice</span>
+System.out.println(map.lastKey());   <span class="cmt">// Charlie</span>
+System.out.println(map.headMap(<span class="str">"Charlie"</span>));
+<span class="cmt">// {Alice=1, Bob=2}</span></pre>
+          </div>
+          <div class="card warn">
+            <h3>Typical Use Cases</h3>
+            <ul>
+              <li>Leaderboards and rankings.</li>
+              <li>Range queries (e.g., dates in a window).</li>
+              <li>Ordered iteration of keys.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 42. SUMMARY & CHECKLIST ========== -->
+  <section class="slide">
+    <div class="slide-inner">
+      <header class="slide-head">
+        <span class="slide-tag">Wrap-Up</span>
+        <h2>Summary and Checklist</h2>
+      </header>
+      <div class="cols">
+        <div class="stack">
+          <div class="card accent">
+            <h3>Key Takeaways</h3>
+            <ul>
+              <li><strong>Abstraction</strong> hides implementation and exposes contract.</li>
+              <li><strong>Abstract classes</strong> share state and partial behaviour; <strong>interfaces</strong> define capabilities and support multiple inheritance of type.</li>
+              <li>An <strong>ADT</strong> is defined by values and operations, not representation.</li>
+              <li>Every representation has an <strong>abstraction function</strong> and a <strong>representation invariant</strong>.</li>
+              <li><strong>Generics</strong> give compile-time type safety and code reuse.</li>
+              <li><strong>Bounded type parameters</strong> restrict what types a parameter accepts.</li>
+              <li><strong>Wildcards</strong> express covariance (<code>extends</code>) and contravariance (<code>super</code>).</li>
+              <li><strong>Type erasure</strong> removes generic information at runtime.</li>
+              <li>The <strong>Collections Framework</strong> provides ready-made ADTs with different performance trade-offs.</li>
+              <li><strong>Comparable</strong> is natural ordering; <strong>Comparator</strong> is external ordering.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card warn">
+            <h3>Before Next Week, Ensure You Can</h3>
+            <ul>
+              <li>Write an abstract class and an interface, and choose between them.</li>
+              <li>Document the invariant and abstraction function for a small ADT.</li>
+              <li>Write a generic class, interface, and method.</li>
+              <li>Apply bounded type parameters to enforce API contracts.</li>
+              <li>Use <code>? extends T</code> and <code>? super T</code> correctly.</li>
+              <li>Implement a generic repository backed by a Map.</li>
+              <li>Choose the right collection for a task (List / Set / Queue / Map).</li>
+              <li>Iterate safely, avoiding <code>ConcurrentModificationException</code>.</li>
+              <li>Order objects with <code>Comparable</code> and <code>Comparator</code>.</li>
+            </ul>
+          </div>
+          <div class="card accent">
+            <h3>Next Week</h3>
+            <p>Byte Streams and File I/O — Unit III. I/O fundamentals, byte streams,
+            <code>FileInputStream</code>, <code>FileOutputStream</code>, and file handling.</p>
+          </div>
+          <div class="card">
+            <p class="blink green" style="font-size:1.05em">End of Week 6 — Abstraction, Generics &amp; Collections</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="hud">
+  <span class="brand">5th Sem · Week 6 · Abstraction, Generics &amp; Collections</span>
+  <span class="counter"><span id="cur">1</span> / <span id="total">42</span></span>
+</div>
+
+<div class="nav">
+  <button id="prev" title="Previous (←)">&#8249;</button>
+  <button id="next" title="Next (→)">&#8250;</button>
+</div>
+
+<div class="progress"><i id="bar"></i></div>
+
+<script>
+/* ---------------- Matrix rain ---------------- */
+(function () {
+  const canvas = document.getElementById('matrix');
+  const ctx = canvas.getContext('2d');
+  let cols, drops, fontSize = 14;
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    cols = Math.floor(canvas.width / fontSize);
+    drops = new Array(cols).fill(1);
+    ctx.font = fontSize + 'px monospace';
+  }
+
+  const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+  function draw() {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#00ff41';
+    ctx.font = fontSize + 'px monospace';
+    for (let i = 0; i < drops.length; i++) {
+      const text = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+        drops[i] = 0;
+      }
+      drops[i]++;
+    }
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  setInterval(draw, 55);
+})();
+
+/* ---------------- Slide navigation ---------------- */
+(function () {
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  const curEl = document.getElementById('cur');
+  const totalEl = document.getElementById('total');
+  const bar = document.getElementById('bar');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  let index = 0;
+
+  totalEl.textContent = total;
+
+  function render() {
+    slides.forEach((s, i) => s.classList.toggle('active', i === index));
+    curEl.textContent = index + 1;
+    bar.style.width = ((index + 1) / total * 100) + '%';
+    prevBtn.disabled = index === 0;
+    nextBtn.disabled = index === total - 1;
+    const active = slides[index];
+    if (active) active.scrollTop = 0;
+  }
+
+  function go(delta) {
+    const next = index + delta;
+    if (next < 0 || next >= total) return;
+    index = next;
+    render();
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault();
+      go(1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      go(-1);
+    } else if (e.key === 'Home') {
+      index = 0; render();
+    } else if (e.key === 'End') {
+      index = total - 1; render();
+    }
+  });
+
+  prevBtn.addEventListener('click', () => go(-1));
+  nextBtn.addEventListener('click', () => go(1));
+
+  document.getElementById('deck').addEventListener('click', (e) => {
+    if (e.target.closest('a, button, pre, code, table')) return;
+    go(1);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

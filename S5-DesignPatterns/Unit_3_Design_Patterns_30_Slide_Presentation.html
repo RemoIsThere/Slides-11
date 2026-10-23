@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unit 3 — Design Patterns | 30-Slide Lecture</title>
+<style>
+:root{--bg:#0b1020;--panel:#121a2d;--panel2:#18233a;--ink:#edf2ff;--muted:#a8b4cc;--accent:#65d6c4;--gold:#f1c779;--line:#2a3854;--code:#080d18}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+body{overflow:hidden}.deck{height:100%;width:100%;position:relative}.slide{display:none;height:100%;width:100%;padding:clamp(26px,5vw,76px) clamp(24px,7vw,104px) 90px;overflow:auto;background:radial-gradient(circle at 85% 10%,#1a3150 0,transparent 32%),linear-gradient(135deg,#0b1020,#10182a 65%,#0b1020)}
+.slide.active{display:flex;flex-direction:column;justify-content:center;animation:enter .24s ease-out}.slide.cover{background:radial-gradient(circle at 78% 25%,#204e59 0,transparent 32%),radial-gradient(circle at 20% 90%,#30304b 0,transparent 35%),#0b1020}
+@keyframes enter{from{opacity:.45;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.eyebrow{font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:750;margin-bottom:18px}
+h1{font-size:clamp(2.5rem,6vw,5.6rem);line-height:.98;letter-spacing:-.055em;margin:0 0 24px;max-width:1050px}
+h2{font-size:clamp(2rem,4vw,3.65rem);line-height:1.05;letter-spacing:-.04em;margin:0 0 24px;max-width:1100px}
+h3{font-size:1.12rem;margin:0 0 10px;color:var(--gold)}
+p{font-size:clamp(1rem,1.55vw,1.28rem);line-height:1.55;color:var(--muted);max-width:1000px;margin:0 0 14px}
+ul,ol{font-size:clamp(.98rem,1.45vw,1.22rem);line-height:1.55;color:var(--ink);padding-left:1.3em;margin:8px 0}
+li{margin:5px 0}strong{color:#fff}.subtitle{font-size:clamp(1.15rem,2vw,1.7rem);color:#c3d1e8;max-width:820px}.tag{display:inline-block;border:1px solid #426078;border-radius:999px;padding:8px 13px;color:var(--accent);font-size:.88rem;margin:6px 7px 0 0}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:12px}.grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{background:linear-gradient(145deg,rgba(24,35,58,.95),rgba(16,25,42,.95));border:1px solid var(--line);border-radius:18px;padding:20px;min-width:0}.card p{font-size:1rem;margin-bottom:0}.card ul{font-size:1rem}.callout{border-left:4px solid var(--accent);padding:14px 18px;background:#12252d;border-radius:0 12px 12px 0;margin-top:16px;color:#dceef0;font-size:1.02rem;line-height:1.5;max-width:1000px}.warn{border-left-color:var(--gold);background:#29251c}
+code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;color:#b9f4e9}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--code);border:1px solid #273650;border-radius:14px;padding:17px 20px;color:#d7e5ff;font-size:clamp(.72rem,1.02vw,.98rem);line-height:1.48;max-width:1100px;max-height:48vh;overflow:auto;margin:10px 0}pre .comment{color:#7d91af}.big-number{font-size:4rem;color:var(--accent);font-weight:800;letter-spacing:-.06em}.diagram{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin:20px 0}.node{padding:15px 18px;border:1px solid #50708a;background:#15263a;border-radius:12px;text-align:center;min-width:130px}.arrow{color:var(--accent);font-size:1.5rem;font-weight:800}.table{width:100%;border-collapse:collapse;margin-top:10px;font-size:clamp(.82rem,1.2vw,1.05rem)}.table th,.table td{border-bottom:1px solid var(--line);padding:11px 12px;text-align:left;vertical-align:top}.table th{color:var(--accent);font-weight:750}.table td{color:#d6e0f3}.footer{position:fixed;left:0;right:0;bottom:0;height:62px;display:flex;align-items:center;gap:16px;padding:0 26px;background:rgba(7,11,20,.88);border-top:1px solid #23314a;backdrop-filter:blur(12px);z-index:5}.progress{height:4px;background:#24314a;flex:1;border-radius:99px;overflow:hidden}.progress span{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}.counter{font-size:.9rem;color:var(--muted);min-width:76px;text-align:center}.controls{display:flex;gap:8px}.controls button{border:1px solid #3b4b68;background:#172239;color:var(--ink);border-radius:10px;padding:9px 13px;cursor:pointer;font-size:.9rem}.controls button:hover{border-color:var(--accent);color:var(--accent)}.hint{position:absolute;right:clamp(24px,7vw,104px);top:28px;color:#71819d;font-size:.78rem}.split{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}.pillrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.small{font-size:.9rem;color:var(--muted)}.quote{font-size:clamp(1.4rem,2.8vw,2.5rem);line-height:1.25;letter-spacing:-.025em;max-width:950px}.accent{color:var(--accent)}.gold{color:var(--gold)}
+@media(max-width:760px){.slide{padding:28px 22px 88px}.grid,.grid.three,.split{grid-template-columns:1fr}.hint{display:none}pre{max-height:38vh}.footer{padding:0 10px;gap:8px}.controls button{padding:8px 10px}.counter{min-width:60px}.card{padding:16px}}
+@media print{body{overflow:visible;background:white;color:#111}.footer,.hint{display:none!important}.deck{height:auto}.slide,.slide.active{display:flex!important;min-height:100vh;height:auto;page-break-after:always;background:white!important;color:#111;padding:50px}.slide p,.slide li,.table td{color:#222}.card{background:#f4f6fa;border-color:#ccc}pre{color:#111;background:#f4f4f4;border-color:#ccc}h1,h2,h3,strong{color:#111}}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+<section class="slide cover active">
+<div class="eyebrow">Object-Oriented Software Design · Unit 3</div>
+<h1>Design<br><span class="accent">Patterns</span></h1>
+<p class="subtitle">A practical guide to reusable design solutions in Java</p>
+<div class="pillrow"><span class="tag">GoF foundations</span><span class="tag">UML thinking</span><span class="tag">Java examples</span><span class="tag">30 slides</span></div>
+<p style="margin-top:36px;font-size:1rem">Lecture deck · Core syllabus topics</p>
+</section>
+
+<section class="slide"><div class="eyebrow">01 · Learning goals</div><h2>What you should learn</h2><div class="grid">
+<div class="card"><h3>Understand</h3><ul><li>What a design pattern is</li><li>Why patterns matter</li><li>How GoF patterns are classified</li></ul></div>
+<div class="card"><h3>Recognize</h3><ul><li>Creational patterns</li><li>Structural patterns</li><li>Behavioral patterns</li></ul></div>
+<div class="card"><h3>Implement</h3><ul><li>Singleton and factories</li><li>Bridge and Flyweight</li><li>Iterator and Observer</li></ul></div>
+<div class="card"><h3>Apply</h3><ul><li>Read simple UML relationships</li><li>Choose a pattern for a problem</li><li>Explain trade-offs, not just benefits</li></ul></div>
+</div></section>
+
+<section class="slide"><div class="eyebrow">02 · Foundations</div><h2>What is a design pattern?</h2><p class="quote">A design pattern is a reusable, named approach to a recurring software design problem.</p>
+<div class="grid"><div class="card"><h3>It is</h3><ul><li>A design template or approach</li><li>A shared vocabulary for developers</li><li>A way to organize responsibilities</li></ul></div><div class="card"><h3>It is not</h3><ul><li>A complete application</li><li>A code snippet that fits every case</li><li>An algorithm for calculating an answer</li></ul></div></div>
+<div class="callout">Teach the problem first. A pattern is useful only when it makes the design clearer than the simpler alternative.</div></section>
+
+<section class="slide"><div class="eyebrow">03 · Motivation</div><h2>Why patterns are useful</h2><div class="grid three">
+<div class="card"><div class="big-number">01</div><h3>Maintainability</h3><p>Responsibilities are clearer, so changes are easier to localize.</p></div>
+<div class="card"><div class="big-number">02</div><h3>Extensibility</h3><p>New implementations can often be added without rewriting client logic.</p></div>
+<div class="card"><div class="big-number">03</div><h3>Communication</h3><p>“Use Observer” conveys a design idea faster than a long description.</p></div>
+</div><div class="callout warn">Patterns add structure and classes. Do not use one merely to make a small program look sophisticated.</div></section>
+
+<section class="slide"><div class="eyebrow">04 · Example problem</div><h2>When code becomes hard to extend</h2><pre>class NotificationService {
+    void send(String type, String message) {
+        if (type.equals("EMAIL")) {
+            System.out.println("Email: " + message);
+        } else if (type.equals("SMS")) {
+            System.out.println("SMS: " + message);
+        }
+    }
+}</pre><ul><li>Every new notification type adds another branch.</li><li>The service knows the details of every channel.</li><li>Testing each behavior in isolation is harder.</li></ul><div class="callout">This code is not automatically wrong. It becomes a design problem when types and rules keep growing.</div></section>
+
+<section class="slide"><div class="eyebrow">05 · GoF</div><h2>The Gang of Four</h2><p>The “Gang of Four” (GoF) are the four authors of <em>Design Patterns: Elements of Reusable Object-Oriented Software</em>, published in 1994.</p><div class="grid">
+<div class="card"><h3>Erich Gamma</h3><p>Co-author of the classic patterns text.</p></div><div class="card"><h3>Richard Helm</h3><p>Co-author of the classic patterns text.</p></div><div class="card"><h3>Ralph Johnson</h3><p>Co-author of the classic patterns text.</p></div><div class="card"><h3>John Vlissides</h3><p>Co-author of the classic patterns text.</p></div></div><div class="callout">The book describes 23 classic object-oriented design patterns. Your syllabus covers a subset.</div></section>
+
+<section class="slide"><div class="eyebrow">06 · Classification</div><h2>Three GoF categories</h2><div class="grid three">
+<div class="card"><h3>Creational</h3><p><strong>Question:</strong> How should objects be created?</p><p>Factory Method · Abstract Factory · Singleton</p></div>
+<div class="card"><h3>Structural</h3><p><strong>Question:</strong> How should objects and classes be composed?</p><p>Bridge · Flyweight</p></div>
+<div class="card"><h3>Behavioral</h3><p><strong>Question:</strong> How should objects communicate?</p><p>Iterator · Observer</p></div></div><div class="callout">MVC is commonly taught as an architectural pattern rather than one of the 23 GoF patterns.</div></section>
+
+<section class="slide"><div class="eyebrow">08 · Creational</div><h2>Singleton pattern</h2><p class="quote">Ensure a class has one instance and provide a shared access point to it.</p><div class="grid">
+<div class="card"><h3>Typical structure</h3><ul><li>Private constructor</li><li>Static instance</li><li>Public access method</li></ul></div>
+<div class="card"><h3>Possible use cases</h3><ul><li>Shared application configuration</li><li>A single process-level registry</li><li>Carefully designed shared service</li></ul></div></div><div class="callout warn">Singletons introduce global state and can complicate tests. Use them only when a single shared instance is a genuine requirement.</div></section>
+
+<section class="slide"><div class="eyebrow">09 · Singleton code</div><h2>Java implementation</h2><pre>class CollegeConfig {
+    private static final CollegeConfig INSTANCE =
+            new CollegeConfig();
+
+    private CollegeConfig() { }
+
+    public static CollegeConfig getInstance() {
+        return INSTANCE;
+    }
+}
+
+class Main {
+    public static void main(String[] args) {
+        CollegeConfig a = CollegeConfig.getInstance();
+        CollegeConfig b = CollegeConfig.getInstance();
+        System.out.println(a == b); // true
+    }
+}</pre><ul><li><code>private</code> blocks ordinary construction from outside.</li><li><code>static final</code> holds one reference for this class loader.</li><li>The eager instance is created during class initialization.</li></ul></section>
+
+<section class="slide"><div class="eyebrow">10 · Singleton trade-offs</div><h2>Eager, lazy, and thread safety</h2><table class="table"><thead><tr><th>Approach</th><th>Behavior</th><th>Watch out for</th></tr></thead><tbody><tr><td>Eager</td><td>Instance created during class initialization.</td><td>May create it even if never used.</td></tr><tr><td>Simple lazy</td><td>Instance created on first request.</td><td>Unsynchronized code can create duplicates under concurrency.</td></tr><tr><td>Holder idiom</td><td>Nested holder initializes on first access.</td><td>Still a global shared dependency.</td></tr><tr><td>Enum Singleton</td><td>Java enum gives robust serialization behavior.</td><td>Not suitable for every API or inheritance need.</td></tr></tbody></table><div class="callout">Check understanding: Why is calling <code>new CollegeConfig()</code> from another class not allowed?</div></section>
+
+<section class="slide"><div class="eyebrow">11 · Creational</div><h2>Factory Method pattern</h2><p class="quote">Define a creation method; subclasses decide which concrete product to instantiate.</p><div class="diagram"><div class="node">Creator<br><small>factory method</small></div><div class="arrow">→</div><div class="node">Product<br><small>interface</small></div></div><div class="grid">
+<div class="card"><h3>Roles</h3><ul><li>Product interface</li><li>Concrete products</li><li>Creator with factory method</li><li>Concrete creators</li></ul></div>
+<div class="card"><h3>Example</h3><p>A notification workflow works with <code>Notification</code>; an email creator supplies an email product and an SMS creator supplies an SMS product.</p></div></div></section>
+
+<section class="slide"><div class="eyebrow">12 · Factory Method code</div><h2>Notification factory</h2><pre>interface Notification {
+    void send(String message);
+}
+class EmailNotification implements Notification {
+    public void send(String m) {
+        System.out.println("Email: " + m);
+    }
+}
+abstract class Creator {
+    abstract Notification createNotification();
+
+    void notifyUser(String message) {
+        createNotification().send(message);
+    }
+}
+class EmailCreator extends Creator {
+    Notification createNotification() {
+        return new EmailNotification();
+    }
+}</pre><p>Complete the example by adding <code>SMSNotification</code> and <code>SMSCreator</code>. Ask students which class decides the concrete product.</p></section>
+
+<section class="slide"><div class="eyebrow">13 · Factory Method</div><h2>Benefits and trade-offs</h2><div class="grid">
+<div class="card"><h3>Benefits</h3><ul><li>Separates creation from use</li><li>Client code depends on an interface</li><li>Supports new product implementations</li></ul></div>
+<div class="card"><h3>Trade-offs</h3><ul><li>May add several classes</li><li>Can be excessive for a tiny fixed set of objects</li><li>Creation responsibility must be placed sensibly</li></ul></div></div><div class="callout"><strong>Class activity:</strong> Add a WhatsApp notification without changing the existing email product class.</div><p class="small">Note: A simple static factory method is a related technique, but it is not automatically the GoF Factory Method pattern.</p></section>
+
+<section class="slide"><div class="eyebrow">14 · Creational</div><h2>Abstract Factory pattern</h2><p class="quote">Provide an interface for creating families of related objects without naming their concrete classes.</p><div class="diagram"><div class="node">GUIFactory</div><div class="arrow">→</div><div class="node">Button + Checkbox</div></div><div class="grid">
+<div class="card"><h3>Windows family</h3><p>WindowsFactory creates WindowsButton and WindowsCheckbox.</p></div>
+<div class="card"><h3>Mac family</h3><p>MacFactory creates MacButton and MacCheckbox.</p></div></div><div class="callout">The client chooses a factory family and receives products that belong together.</div></section>
+
+<section class="slide"><div class="eyebrow">15 · Abstract Factory code</div><h2>Build a matching product family</h2><pre>interface Button { void render(); }
+interface Checkbox { void render(); }
+
+class WindowsButton implements Button {
+    public void render() { System.out.println("Windows button"); }
+}
+class WindowsCheckbox implements Checkbox {
+    public void render() { System.out.println("Windows checkbox"); }
+}
+
+interface GUIFactory {
+    Button createButton();
+    Checkbox createCheckbox();
+}
+class WindowsFactory implements GUIFactory {
+    public Button createButton() { return new WindowsButton(); }
+    public Checkbox createCheckbox() { return new WindowsCheckbox(); }
+}</pre><p>Add a <code>MacFactory</code> that returns Mac products. Then write client code that depends only on <code>GUIFactory</code>.</p></section>
+
+<section class="slide"><div class="eyebrow">16 · Factory comparison</div><h2>Factory Method vs. Abstract Factory</h2><table class="table"><thead><tr><th>Point</th><th>Factory Method</th><th>Abstract Factory</th></tr></thead><tbody><tr><td>Main goal</td><td>Create a product through a method</td><td>Create a family of related products</td></tr><tr><td>Typical structure</td><td>Creator and concrete creators</td><td>Factory interface with multiple creation methods</td></tr><tr><td>Example</td><td>Email vs. SMS notification</td><td>Windows vs. Mac UI components</td></tr><tr><td>Extension pressure</td><td>Often add a creator/product pair</td><td>Adding a product family is easy; adding a new product kind can change every factory</td></tr></tbody></table><div class="callout">Exam tip: “Family of related objects” is the key phrase for Abstract Factory.</div></section>
+
+<section class="slide"><div class="eyebrow">17 · Structural</div><h2>Bridge pattern</h2><p class="quote">Separate an abstraction from its implementation so both can vary independently.</p><div class="grid">
+<div class="card"><h3>Abstraction hierarchy</h3><p><code>Remote</code> → <code>AdvancedRemote</code></p><p>Represents the control features.</p></div>
+<div class="card"><h3>Implementation hierarchy</h3><p><code>Device</code> → <code>TV</code>, <code>Radio</code></p><p>Represents the underlying device.</p></div></div><div class="diagram"><div class="node">Remote</div><div class="arrow">has a →</div><div class="node">Device</div></div><p>Composition creates a bridge between the two hierarchies. A remote can work with different devices without a separate subclass for every combination.</p></section>
+
+<section class="slide"><div class="eyebrow">18 · Bridge code</div><h2>Remote and device</h2><pre>interface Device {
+    void turnOn();
+    void turnOff();
+}
+class TV implements Device {
+    public void turnOn() { System.out.println("TV ON"); }
+    public void turnOff() { System.out.println("TV OFF"); }
+}
+class Remote {
+    protected final Device device;
+    Remote(Device device) { this.device = device; }
+    void powerOn() { device.turnOn(); }
+    void powerOff() { device.turnOff(); }
+}
+class AdvancedRemote extends Remote {
+    AdvancedRemote(Device device) { super(device); }
+    void mute() { System.out.println("Muted"); }
+}</pre><p>Example use: <code>new Remote(new TV()).powerOn();</code></p><div class="callout">Ask: What changes if a new <code>Projector</code> implements <code>Device</code>? The remote abstraction need not change.</div></section>
+
+<section class="slide"><div class="eyebrow">19 · Bridge</div><h2>Why use Bridge?</h2><div class="grid">
+<div class="card"><h3>Without Bridge</h3><p>Inheritance can multiply combinations: BasicTVRemote, AdvancedTVRemote, BasicRadioRemote, AdvancedRadioRemote…</p></div>
+<div class="card"><h3>With Bridge</h3><p>Remote features and device types evolve separately. Composition connects the two.</p></div></div><ul><li>Useful when two dimensions of variation exist.</li><li>Reduces subclass explosion.</li><li>Can add abstraction layers that are unnecessary in a very small system.</li></ul><div class="callout">Practical: Add a <code>Projector</code> device and a new remote feature without changing existing device classes.</div></section>
+
+<section class="slide"><div class="eyebrow">20 · Structural</div><h2>Flyweight pattern</h2><p class="quote">Share common object state to reduce the memory cost of many similar objects.</p><div class="grid">
+<div class="card"><h3>Intrinsic state</h3><p>Shared, stable data kept in the flyweight: character symbol and font.</p></div>
+<div class="card"><h3>Extrinsic state</h3><p>Context-specific data supplied from outside: position of a character on the page.</p></div></div><div class="callout">Think of a text editor displaying thousands of characters. Shared style objects can avoid storing identical formatting data repeatedly.</div></section>
+
+<section class="slide"><div class="eyebrow">21 · Flyweight code</div><h2>Cache and reuse objects</h2><pre>import java.util.*;
+
+class CharacterStyle {
+    private final char symbol;
+    private final String font;
+
+    CharacterStyle(char symbol, String font) {
+        this.symbol = symbol;
+        this.font = font;
+    }
+    void display(int position) {
+        System.out.println(symbol + " " + font + " at " + position);
+    }
+}
+class CharacterFactory {
+    private static final Map<String, CharacterStyle> CACHE =
+        new HashMap<>();
+
+    static CharacterStyle get(char c, String font) {
+        String key = c + ":" + font;
+        return CACHE.computeIfAbsent(
+            key, k -> new CharacterStyle(c, font));
+    }
+}</pre><p>Call <code>get('A', "Arial")</code> twice. Both calls return the same cached object for that key.</p></section>
+
+<section class="slide"><div class="eyebrow">22 · Flyweight</div><h2>Benefits and cautions</h2><div class="grid">
+<div class="card"><h3>Benefits</h3><ul><li>Less duplicated shared state</li><li>Lower memory use at large scale</li><li>Centralized reuse through a factory</li></ul></div>
+<div class="card"><h3>Cautions</h3><ul><li>Cache adds complexity</li><li>Shared state should generally be immutable</li><li>Cache growth may itself consume memory</li><li>Concurrent access needs thought</li></ul></div></div><div class="callout">Practical: Design a tree renderer. Share tree type, texture, and color data; keep each tree's position outside the shared object.</div></section>
+
+<section class="slide"><div class="eyebrow">23 · Behavioral</div><h2>Iterator pattern</h2><p class="quote">Traverse a collection without exposing how its elements are stored.</p><div class="grid">
+<div class="card"><h3>Java interfaces</h3><p><code>Iterable&lt;T&gt;</code> supplies an iterator. <code>Iterator&lt;T&gt;</code> traverses the elements.</p></div>
+<div class="card"><h3>Core methods</h3><ul><li><code>hasNext()</code> — another element?</li><li><code>next()</code> — return next element</li><li><code>remove()</code> — optional operation</li></ul></div></div><div class="callout">The same traversal style can work across different collection implementations.</div></section>
+
+<section class="slide"><div class="eyebrow">24 · Iterator code</div><h2>Use a Java iterator</h2><pre>import java.util.*;
+
+class Main {
+    public static void main(String[] args) {
+        List<String> students = new ArrayList<>();
+        students.add("Aman");
+        students.add("Riya");
+        students.add("Karan");
+
+        Iterator<String> it = students.iterator();
+        while (it.hasNext()) {
+            System.out.println(it.next());
+        }
+    }
+}</pre><p>Output: Aman, Riya, Karan — each on a separate line.</p><ul><li><code>iterator()</code> obtains the traversal object.</li><li><code>next()</code> advances the traversal.</li><li>Calling <code>next()</code> after exhaustion normally throws <code>NoSuchElementException</code>.</li></ul></section>
+
+<section class="slide"><div class="eyebrow">25 · Custom Iterator</div><h2>Understand the mechanics</h2><pre>class StudentCollection implements Iterable<String> {
+    private final String[] data = {"Aman", "Riya", "Karan"};
+
+    public Iterator<String> iterator() {
+        return new Iterator<String>() {
+            private int index = 0;
+
+            public boolean hasNext() {
+                return index < data.length;
+            }
+
+            public String next() {
+                if (!hasNext()) throw new NoSuchElementException();
+                return data[index++];
+            }
+        };
+    }
+}</pre><p>Because the class implements <code>Iterable</code>, it can be used in an enhanced <code>for</code> loop.</p><div class="callout">Practical: Create a custom iterator for roll numbers and print only even values.</div></section>
+
+<section class="slide"><div class="eyebrow">26 · Behavioral</div><h2>Observer pattern</h2><p class="quote">When a subject changes, it notifies its registered observers.</p><div class="diagram"><div class="node">Subject<br><small>subscribe / notify</small></div><div class="arrow">→</div><div class="node">Observer A</div><div class="arrow">+</div><div class="node">Observer B</div></div><div class="grid">
+<div class="card"><h3>Subject</h3><p>Maintains the subscriber list and sends updates.</p></div>
+<div class="card"><h3>Observer</h3><p>Defines a method that each subscriber implements.</p></div></div><p>Example: A result publisher notifies subscribed students when results are announced.</p></section>
+
+<section class="slide"><div class="eyebrow">27 · Observer code</div><h2>Publish to subscribers</h2><pre>interface Observer {
+    void update(String message);
+}
+class Student implements Observer {
+    private final String name;
+    Student(String name) { this.name = name; }
+    public void update(String message) {
+        System.out.println(name + ": " + message);
+    }
+}
+class ResultPublisher {
+    private final List<Observer> observers = new ArrayList<>();
+
+    void subscribe(Observer o) { observers.add(o); }
+    void unsubscribe(Observer o) { observers.remove(o); }
+
+    void publish(String message) {
+        for (Observer o : observers) o.update(message);
+    }
+}</pre><p>Register two students, publish an announcement, unsubscribe one, then publish again. Only the remaining subscriber receives the second update.</p></section>
+
+<section class="slide"><div class="eyebrow">28 · Architecture</div><h2>MVC: Model–View–Controller</h2><p>MVC separates an application into three responsibilities.</p><div class="grid three">
+<div class="card"><h3>Model</h3><p>Data and domain rules. Example: student name and marks.</p></div>
+<div class="card"><h3>View</h3><p>Presentation. Example: screen or report showing marks.</p></div>
+<div class="card"><h3>Controller</h3><p>Handles input and coordinates model/view work.</p></div></div><div class="diagram"><div class="node">User input</div><div class="arrow">→</div><div class="node">Controller</div><div class="arrow">→</div><div class="node">Model</div></div><p>The controller can then select or update the view. Real MVC frameworks differ in the exact request and update flow.</p></section>
+
+<section class="slide"><div class="eyebrow">29 · MVC implementation</div><h2>Small Java example</h2><pre>class Student {
+    private final String name;
+    private final int marks;
+    Student(String name, int marks) {
+        this.name = name; this.marks = marks;
+    }
+    String getName() { return name; }
+    int getMarks() { return marks; }
+}
+class StudentView {
+    void display(String name, int marks) {
+        System.out.println(name + " — " + marks);
+    }
+}
+class StudentController {
+    private final Student model;
+    private final StudentView view;
+    StudentController(Student m, StudentView v) {
+        model = m; view = v;
+    }
+    void display() {
+        view.display(model.getName(), model.getMarks());
+    }
+}</pre><p>In <code>main</code>, create a Student, a StudentView, and a StudentController; call <code>controller.display()</code>.</p><div class="callout">Extension: Replace the console view with a Swing view while keeping the model independent of the GUI.</div></section>
+
+<section class="slide"><div class="eyebrow">30 · Wrap-up</div><h2>Review, compare, apply</h2><table class="table"><thead><tr><th>Pattern</th><th>Core idea</th></tr></thead><tbody><tr><td>Singleton</td><td>One shared instance</td></tr><tr><td>Factory Method</td><td>Subclasses choose a product</td></tr><tr><td>Abstract Factory</td><td>Families of related products</td></tr><tr><td>Bridge</td><td>Independent abstraction and implementation</td></tr><tr><td>Flyweight</td><td>Share intrinsic state</td></tr><tr><td>Iterator</td><td>Traverse without exposing storage</td></tr><tr><td>Observer</td><td>Notify registered dependents</td></tr><tr><td>MVC</td><td>Separate model, view, controller</td></tr></tbody></table><p><strong>Exit ticket:</strong> Choose one pattern, state the problem it solves, draw its roles, and describe one trade-off.</p><p class="small">Keyboard: ← / → to navigate · Home / End to jump · F for fullscreen · Print for PDF handout</p></section>
+</div>
+<div class="hint">Use ← → keys to navigate</div>
+<div class="footer">
+  <div class="counter" id="counter">01 / 30</div>
+  <div class="progress"><span id="bar"></span></div>
+  <div class="controls">
+    <button id="prev" aria-label="Previous slide">← Prev</button>
+    <button id="next" aria-label="Next slide">Next →</button>
+    <button id="full" aria-label="Toggle fullscreen">Fullscreen</button>
+    <button id="print" aria-label="Print slides">Print</button>
+  </div>
+</div>
+<script>
+const slides = [...document.querySelectorAll('.slide')];
+let current = 0;
+function show(index) {
+  current = Math.max(0, Math.min(slides.length - 1, index));
+  slides.forEach((s, i) => s.classList.toggle('active', i === current));
+  document.getElementById('counter').textContent =
+    String(current + 1).padStart(2, '0') + ' / ' + String(slides.length).padStart(2, '0');
+  document.getElementById('bar').style.width = ((current + 1) / slides.length * 100) + '%';
+  document.getElementById('prev').disabled = current === 0;
+  document.getElementById('next').disabled = current === slides.length - 1;
+}
+document.getElementById('prev').addEventListener('click', () => show(current - 1));
+document.getElementById('next').addEventListener('click', () => show(current + 1));
+document.getElementById('full').addEventListener('click', async () => {
+  try {
+    if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+    else await document.exitFullscreen();
+  } catch (e) { alert('Fullscreen is not available in this browser.'); }
+});
+document.getElementById('print').addEventListener('click', () => window.print());
+document.addEventListener('keydown', e => {
+  if (['ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); show(current + 1); }
+  if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); show(current - 1); }
+  if (e.key === 'Home') show(0);
+  if (e.key === 'End') show(slides.length - 1);
+  if (e.key.toLowerCase() === 'f') document.getElementById('full').click();
+});
+let touchStart = null;
+document.addEventListener('touchstart', e => { touchStart = e.changedTouches[0].clientX; }, {passive:true});
+document.addEventListener('touchend', e => {
+  if (touchStart === null) return;
+  const delta = e.changedTouches[0].clientX - touchStart;
+  if (Math.abs(delta) > 55) show(current + (delta < 0 ? 1 : -1));
+  touchStart = null;
+}, {passive:true});
+show(0);
+</script>
+</body>
+</html>
